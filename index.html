@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>서울투어</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B1B1B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=8f8f1585908574cb126afeeeeb73af7e&libraries=services&autoload=false"></script>
+<style>
+:root{
+  --ink:#1C1B18; --paper:#EFE9DC; --card:#FFFFFF;
+  --brand:#A23E2C;      /* 단청 붉은빛 */
+  --brand2:#3F5B4E;     /* 청자빛 초록 */
+  --gold:#B8863A;       /* 단청 황토 */
+  --muted:#8B8478; --line:#E1D9C7; --danger:#B23A2E;
+  --radius:14px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:'Noto Sans KR',system-ui,sans-serif;
+  background:var(--paper); color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+h1,h2,h3,.serif{font-family:'Noto Serif KR',serif;}
+button{font-family:inherit;}
+#app{display:none;height:100vh;display:none;flex-direction:column;}
+#app.active{display:flex;}
+
+/* ---------- 로그인 ---------- */
+#authScreen{
+  min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+  padding:32px 24px; max-width:420px; margin:0 auto;
+}
+#authScreen h1{font-size:26px; margin:0 0 4px; letter-spacing:-0.3px;}
+#authScreen .sub{color:var(--muted); font-size:13.5px; margin-bottom:28px;}
+.field{margin-bottom:12px;}
+.field label{display:block; font-size:12.5px; color:var(--muted); margin-bottom:4px;}
+.field input{
+  width:100%; padding:12px 13px; border:1px solid var(--line); border-radius:10px;
+  font-size:15px; background:#fff; color:var(--ink);
+}
+.field input:focus{outline:2px solid var(--brand2); outline-offset:1px;}
+.btn{
+  width:100%; padding:13px; border:none; border-radius:10px; font-size:15px; font-weight:700;
+  cursor:pointer; background:var(--brand); color:#fff; margin-top:6px;
+}
+.btn.secondary{background:transparent; color:var(--brand2); border:1px solid var(--brand2); font-weight:500;}
+.btn:disabled{opacity:.5;}
+#authMsg{font-size:12.5px; min-height:18px; margin-top:8px;}
+.authToggle{text-align:center; font-size:13px; color:var(--muted); margin-top:16px;}
+.authToggle a{color:var(--brand2); font-weight:700; cursor:pointer; text-decoration:none;}
+
+/* ---------- 앱 셸 ---------- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; background:var(--paper); border-bottom:1px solid var(--line);
+  flex-shrink:0;
+}
+.topbar h1{font-size:19px; margin:0;}
+.topbar .userchip{font-size:12px; color:var(--muted);}
+.tabpanel{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+.tabbar{
+  display:flex; border-top:1px solid var(--line); background:#fff; flex-shrink:0;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.tabbtn{
+  flex:1; border:none; background:none; padding:9px 4px 8px; font-size:11px; color:var(--muted);
+  display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;
+}
+.tabbtn .ic{font-size:20px;}
+.tabbtn.active{color:var(--brand);}
+
+/* ---------- 공통 카드/칩 ---------- */
+.section{padding:14px 16px 6px;}
+.section h2{font-size:16px; margin:4px 0 10px;}
+.chiprow{display:flex; gap:7px; overflow-x:auto; padding:2px 16px 12px; -webkit-overflow-scrolling:touch;}
+.chip{
+  flex-shrink:0; padding:7px 13px; border-radius:999px; border:1px solid var(--line);
+  background:#fff; font-size:12.5px; color:var(--muted); cursor:pointer; white-space:nowrap;
+}
+.chip.active{background:var(--brand); border-color:var(--brand); color:#fff;}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; margin:0 16px 12px;
+}
+.card h3{font-size:15px; margin:0 0 4px;}
+.card .meta{font-size:12px; color:var(--muted); margin-bottom:6px;}
+.card .desc{font-size:13px; color:#4A473F; line-height:1.5;}
+.tagrow{display:flex; gap:5px; flex-wrap:wrap; margin-top:8px;}
+.tag{font-size:11px; padding:3px 8px; border-radius:6px; background:#F1ECDF; color:var(--brand2); font-weight:500;}
+.tag.wine{background:#F3E4E0; color:var(--brand);}
+.empty{padding:32px 16px; text-align:center; color:var(--muted); font-size:13.5px;}
+
+/* ---------- 지도 ---------- */
+#mapWrap{position:relative; height:100%; display:flex; flex-direction:column;}
+#kakaoMap{flex:1; width:100%; background:#e8e4d8;}
+.mapToolbar{
+  position:absolute; top:10px; left:10px; right:10px; z-index:5;
+  display:flex; gap:7px; overflow-x:auto;
+}
+.mapFab{
+  position:absolute; right:14px; bottom:16px; z-index:5;
+  background:var(--brand); color:#fff; border:none; border-radius:999px;
+  padding:12px 18px; font-size:13.5px; font-weight:700; box-shadow:0 3px 10px rgba(0,0,0,.2);
+  cursor:pointer;
+}
+
+/* ---------- 오버레이/바텀시트 ---------- */
+.overlay{
+  position:fixed; inset:0; background:rgba(20,18,14,.5); z-index:50;
+  display:none; align-items:flex-end; justify-content:center;
+}
+.overlay.show{display:flex;}
+.sheet{
+  background:#fff; width:100%; max-width:480px; border-radius:18px 18px 0 0;
+  max-height:86vh; overflow-y:auto; padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));
+}
+.sheet .handle{width:36px; height:4px; background:var(--line); border-radius:2px; margin:0 auto 14px;}
+.sheet h2{font-size:18px; margin:0 0 2px;}
+.sheet .close{position:absolute; top:14px; right:16px; background:none; border:none; font-size:20px; color:var(--muted); cursor:pointer;}
+.detailOverlay{position:fixed; inset:0; background:#fff; z-index:60; display:none; flex-direction:column;}
+.detailOverlay.show{display:flex;}
+.detailHead{display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); padding-top:calc(14px + env(safe-area-inset-top,0px));}
+.detailHead button{background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink);}
+.detailHead h2{font-size:16px; margin:0; flex:1;}
+.detailBody{flex:1; overflow-y:auto; padding:16px;}
+.spotStep{display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #F1ECDF;}
+.spotStep:last-child{border-bottom:none;}
+.spotNum{width:26px; height:26px; border-radius:50%; background:var(--brand2); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.spotInfo h4{margin:0 0 2px; font-size:14.5px;}
+.spotInfo .cat{font-size:11.5px; color:var(--brand); margin-bottom:3px;}
+.spotInfo .note{font-size:12.5px; color:var(--muted); line-height:1.5;}
+.walkNote{font-size:11.5px; color:var(--muted); padding-left:38px; margin:-4px 0 4px;}
+
+/* ---------- 폼 ---------- */
+.formGrid{display:flex; flex-direction:column; gap:10px; margin-top:12px;}
+select{width:100%; padding:11px; border:1px solid var(--line); border-radius:10px; font-size:14px; background:#fff;}
+textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:10px; font-size:14px; resize:vertical; min-height:60px; font-family:inherit;}
+.searchResult{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+.searchResult .n{font-size:13.5px; font-weight:700;}
+.searchResult .a{font-size:11.5px; color:var(--muted);}
+.smallBtn{padding:7px 12px; border-radius:8px; border:1px solid var(--brand2); background:#fff; color:var(--brand2); font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0;}
+.rowBtns{display:flex; gap:8px; margin-top:10px;}
+.rowBtns .btn{margin-top:0;}
+</style>
+</head>
+<body>
+
+<!-- ============ 로그인 화면 ============ -->
+<div id="authScreen">
+  <h1>서울투어</h1>
+  <p class="sub">미술관·동네투어·숨은맛집, 우리 둘만의 서울</p>
+  <div class="field"><label>닉네임 (최초 가입시)</label><input id="nickInput" type="text" placeholder="예: 민수"></div>
+  <div class="field"><label>이메일</label><input id="emailInput" type="email" placeholder="you@example.com"></div>
+  <div class="field"><label>비밀번호</label><input id="pwInput" type="password" placeholder="6자 이상"></div>
+  <button class="btn" id="authSubmitBtn" onclick="submitAuth()">로그인</button>
+  <div id="authMsg"></div>
+  <div class="authToggle" id="authToggleWrap">계정이 없으신가요? <a onclick="toggleAuthMode()">회원가입</a></div>
+</div>
+
+<!-- ============ 앱 ============ -->
+<div id="app">
+  <div class="topbar">
+    <h1 class="serif">서울투어</h1>
+    <span class="userchip" id="userChip"></span>
+  </div>
+
+  <div class="tabpanel" id="tabpanel">
+
+    <!-- 지도 탭 -->
+    <div class="tabcontent" id="tab-map">
+      <div id="mapWrap">
+        <div id="kakaoMap"></div>
+        <div class="mapToolbar" id="mapFilterChips"></div>
+        <button class="mapFab" onclick="openRouteSheet()">🚌 길찾기</button>
+      </div>
+    </div>
+
+    <!-- 동네투어 탭 -->
+    <div class="tabcontent" id="tab-course" style="display:none;">
+      <div class="section"><h2>동네투어</h2></div>
+      <div class="chiprow" id="themeChips"></div>
+      <div id="courseList"></div>
+    </div>
+
+    <!-- 맛집·와인 탭 -->
+    <div class="tabcontent" id="tab-food" style="display:none;">
+      <div class="section" style="padding-bottom:0;">
+        <div class="chiprow" style="padding-left:0;padding-right:0;">
+          <button class="chip active" id="foodSrcCurated" onclick="setFoodSource('curated')">참조리스트</button>
+          <button class="chip" id="foodSrcBucket" onclick="setFoodSource('bucket')">내 버킷리스트</button>
+        </div>
+      </div>
+      <div class="chiprow" id="foodCatChips"></div>
+      <div id="foodList"></div>
+      <div style="padding:0 16px 20px;">
+        <button class="btn" onclick="openAddPlaceSheet()">+ 버킷리스트에 장소 추가</button>
+      </div>
+    </div>
+
+    <!-- 교통 탭 -->
+    <div class="tabcontent" id="tab-transit" style="display:none;">
+      <div class="section"><h2>귀가거점 즐겨찾기</h2>
+        <p style="font-size:12.5px;color:var(--muted);margin:-4px 0 4px;">자주 가는 귀가·출발 거점을 등록해두면, 현재 위치에서 그곳까지 바로 길찾기할 수 있어요.</p>
+      </div>
+      <div id="favList"></div>
+      <div style="padding:0 16px 20px;">
+        <button class="btn secondary" onclick="openAddFavSheet()">+ 즐겨찾기 추가</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tabbar">
+    <button class="tabbtn active" data-tab="map" onclick="switchTab('map')"><span class="ic">🗺️</span>지도</button>
+    <button class="tabbtn" data-tab="course" onclick="switchTab('course')"><span class="ic">🏘️</span>동네투어</button>
+    <button class="tabbtn" data-tab="food" onclick="switchTab('food')"><span class="ic">🍽️</span>맛집·와인</button>
+    <button class="tabbtn" data-tab="transit" onclick="switchTab('transit')"><span class="ic">🚌</span>교통</button>
+  </div>
+</div>
+
+<!-- ============ 코스 상세 오버레이 ============ -->
+<div class="detailOverlay" id="courseDetail">
+  <div class="detailHead">
+    <button onclick="closeDetail('courseDetail')">←</button>
+    <h2 id="courseDetailTitle"></h2>
+  </div>
+  <div class="detailBody" id="courseDetailBody"></div>
+</div>
+
+<!-- ============ 장소 상세 오버레이 ============ -->
+<div class="detailOverlay" id="placeDetail">
+  <div class="detailHead">
+    <button onclick="closeDetail('placeDetail')">←</button>
+    <h2 id="placeDetailTitle"></h2>
+  </div>
+  <div class="detailBody" id="placeDetailBody"></div>
+</div>
+
+<!-- ============ 장소 추가 바텀시트 ============ -->
+<div class="overlay" id="addPlaceOverlay">
+  <div class="sheet" style="position:relative;">
+    <button class="close" onclick="closeSheet('addPlaceOverlay')">✕</button>
+    <div class="handle"></div>
+    <h2>버킷리스트에 장소 추가</h2>
+    <div class="formGrid">
+      <input id="placeSearchInput" type="text" placeholder="가게 이름으로 검색 (예: OO식당)" style="padding:11px;border:1px solid var(--line);border-radius:10px;font-size:14px;">
+      <button class="smallBtn" style="align-self:flex-start;" onclick="searchPlaceForAdd()">검색</button>
+      <div id="placeSearchResults"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 카테고리 선택 바텀시트 ============ -->
+<div class="overlay" id="pickCategoryOverlay">
+  <div class="sheet" style="position:relative;">
+    <button class="close" onclick="closeSheet('pickCategoryOverlay')">✕</button>
+    <div class="handle"></div>
+    <h2 id="pickCategoryPlaceName" style="font-size:15px;"></h2>
+    <p style="font-size:12.5px;color:var(--muted);margin:2px 0 12px;">카테고리를 선택하고, 원하면 메모도 남겨보세요.</p>
+    <div class="formGrid">
+      <select id="pickCategorySelect">
+        <option value="한식">한식</option>
+        <option value="분식">분식</option>
+        <option value="양식">양식</option>
+        <option value="일식">일식</option>
+        <option value="중식">중식</option>
+        <option value="카페">카페</option>
+        <option value="와인">와인</option>
+        <option value="기타">기타</option>
+      </select>
+      <textarea id="pickCategoryMemo" placeholder="메모 (추천메뉴, 느낌 등 — 선택)"></textarea>
+      <button class="btn" onclick="confirmAddPlace()">버킷리스트에 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 즐겨찾기 추가 바텀시트 ============ -->
+<div class="overlay" id="addFavOverlay">
+  <div class="sheet" style="position:relative;">
+    <button class="close" onclick="closeSheet('addFavOverlay')">✕</button>
+    <div class="handle"></div>
+    <h2>즐겨찾기 추가</h2>
+    <div class="formGrid">
+      <input id="favSearchInput" type="text" placeholder="장소 검색 (예: 세종문화회관)" style="padding:11px;border:1px solid var(--line);border-radius:10px;font-size:14px;">
+      <button class="smallBtn" style="align-self:flex-start;" onclick="searchFavForAdd()">검색</button>
+      <div id="favSearchResults"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 길찾기 바텀시트 ============ -->
+<div class="overlay" id="routeOverlay">
+  <div class="sheet" style="position:relative;">
+    <button class="close" onclick="closeSheet('routeOverlay')">✕</button>
+    <div class="handle"></div>
+    <h2>길찾기</h2>
+    <div class="formGrid">
+      <label style="font-size:12.5px;color:var(--muted);">출발지</label>
+      <select id="routeFrom"><option value="gps">내 위치</option></select>
+      <label style="font-size:12.5px;color:var(--muted);">도착지</label>
+      <select id="routeTo"><option value="gps">내 위치</option></select>
+      <label style="font-size:12.5px;color:var(--muted);">이동수단</label>
+      <select id="routeMode">
+        <option value="foot">도보</option>
+        <option value="publictransit">대중교통</option>
+      </select>
+      <button class="btn" onclick="launchRoute()">카카오맵으로 길찾기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   Firebase 초기화 (제주/부산 플래너와 동일 프로젝트 재사용, seoul_ 컬렉션 분리)
+===================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyD883ICuL7jN6gkdHR-y5FACXVbAaO2kNc",
+  authDomain: "jeju-planner-c36ce.firebaseapp.com",
+  projectId: "jeju-planner-c36ce",
+  storageBucket: "jeju-planner-c36ce.firebasestorage.app",
+  messagingSenderId: "1009495851120",
+  appId: "1:1009495851120:web:e7ec610ede2cc275bf34b5"
+};
+let auth, db, currentUser=null, myNickname='';
+try{
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  db = firebase.firestore();
+  db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+}catch(e){ console.error('Firebase init failed', e); }
+
+/* =====================================================================
+   인증
+===================================================================== */
+let authMode='login';
+function toggleAuthMode(){
+  authMode = authMode==='login' ? 'signup' : 'login';
+  document.getElementById('authSubmitBtn').textContent = authMode==='login' ? '로그인' : '가입하기';
+  document.getElementById('authToggleWrap').innerHTML = authMode==='login'
+    ? '계정이 없으신가요? <a onclick="toggleAuthMode()">회원가입</a>'
+    : '이미 계정이 있으신가요? <a onclick="toggleAuthMode()">로그인</a>';
+}
+function authMsg(s, ok){
+  const el=document.getElementById('authMsg');
+  el.textContent = s||''; el.style.color = ok ? 'var(--brand2)' : 'var(--danger)';
+}
+async function submitAuth(){
+  const email=document.getElementById('emailInput').value.trim();
+  const pw=document.getElementById('pwInput').value;
+  const nick=document.getElementById('nickInput').value.trim();
+  if(!email || !pw){ authMsg('이메일과 비밀번호를 입력해주세요.'); return; }
+  const btn=document.getElementById('authSubmitBtn'); btn.disabled=true;
+  try{
+    if(authMode==='signup'){
+      const cred = await auth.createUserWithEmailAndPassword(email, pw);
+      await db.collection('seoul_members').doc(cred.user.uid).set({ nickname: nick||email.split('@')[0], email, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    } else {
+      await auth.signInWithEmailAndPassword(email, pw);
+    }
+  }catch(e){
+    authMsg(authErrorText(e));
+  }finally{ btn.disabled=false; }
+}
+function authErrorText(e){
+  const c=e&&e.code||'';
+  if(c.includes('user-not-found')) return '가입되지 않은 이메일이에요.';
+  if(c.includes('wrong-password')) return '비밀번호가 맞지 않아요.';
+  if(c.includes('email-already-in-use')) return '이미 가입된 이메일이에요.';
+  if(c.includes('weak-password')) return '비밀번호는 6자 이상이어야 해요.';
+  if(c.includes('invalid-email')) return '이메일 형식을 확인해주세요.';
+  return '오류가 발생했어요: ' + (e&&e.message||'');
+}
+auth && auth.onAuthStateChanged(async (user)=>{
+  currentUser=user;
+  if(user){
+    try{
+      const doc = await db.collection('seoul_members').doc(user.uid).get();
+      myNickname = doc.exists ? doc.data().nickname : user.email.split('@')[0];
+    }catch(e){ myNickname = user.email.split('@')[0]; }
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('app').classList.add('active');
+    document.getElementById('userChip').textContent = myNickname + '님';
+    initAppData();
+  } else {
+    document.getElementById('authScreen').style.display='flex';
+    document.getElementById('app').classList.remove('active');
+  }
+});
+
+/* =====================================================================
+   탭 전환
+===================================================================== */
+function switchTab(name){
+  document.querySelectorAll('.tabcontent').forEach(el=>el.style.display='none');
+  document.getElementById('tab-'+name).style.display='block';
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  if(name==='map'){ document.getElementById('tab-map').querySelector('#mapWrap').style.height = (window.innerHeight - 132) + 'px'; ensureKakaoMap(); }
+}
+
+/* =====================================================================
+   동네투어 코스 데이터 (curated, 이번 대화에서 확정한 12개 코스)
+===================================================================== */
+const COURSES = [
+{id:'samcheong-bukchon', name:'삼청동·북촌', type:'지역형', themes:['미술관'], area:'종로구',
+ coord:{lat:37.5760,lng:126.9850},
+ spots:[
+  {name:'안국역 3번출구', cat:'시작점'},
+  {name:'북촌문화센터', cat:'볼거리', walk:'3분'},
+  {name:'북촌 8경', cat:'볼거리·포토스팟', walk:'5분'},
+  {name:'북촌한옥마을', cat:'볼거리', walk:'5분'},
+  {name:'정독도서관', cat:'볼거리', walk:'5분'},
+  {name:'국립현대미술관 서울관', cat:'미술관', walk:'5분'},
+  {name:'아트선재센터', cat:'미술관', walk:'3분'},
+  {name:'국제갤러리', cat:'갤러리', walk:'3분'},
+  {name:'학고재', cat:'갤러리', walk:'2분'},
+  {name:'삼청동수제비', cat:'한식', walk:'5분', note:'1982년부터, 수제비·감자전 노포'},
+  {name:'서울서 둘째로 잘하는 집', cat:'카페(전통)', note:'단팥죽·수정과'},
+  {name:'카페3청', cat:'카페', note:'간판 없는 개인카페'},
+  {name:'갤러리현대', cat:'갤러리', walk:'5분'},
+  {name:'경복궁 동십자각', cat:'볼거리', walk:'5분', note:'코스 마무리 지점'},
+ ]},
+{id:'hannam', name:'한남동', type:'지역형', themes:['미술관','와인·나이트라이프'], area:'용산구',
+ coord:{lat:37.5407,lng:127.0022},
+ spots:[
+  {name:'한강진역 3번출구', cat:'시작점'},
+  {name:'리움미술관', cat:'미술관', walk:'7분'},
+  {name:'페이스갤러리 서울', cat:'갤러리', walk:'3분'},
+  {name:'리만머핀 서울', cat:'갤러리', walk:'3분'},
+  {name:'마하 한남', cat:'카페', walk:'4분', note:'골목 안 빈티지 인테리어, 한강뷰 테라스'},
+  {name:'타데우스 로팍 서울', cat:'갤러리', walk:'3분'},
+  {name:'갤러리바톤', cat:'갤러리', walk:'3분'},
+  {name:'에스더쉬퍼 서울', cat:'갤러리', walk:'4분'},
+  {name:'라라브레드 한남점', cat:'카페(디저트)', walk:'4분', note:'골목 깊숙이 숨어있는 디저트카페'},
+  {name:'히든배럴 한남', cat:'와인바', walk:'6분', note:'한남오거리 지하, 숨은 와이너리 컨셉'},
+ ]},
+{id:'insadong', name:'인사동', type:'지역형', themes:['미술관','전통·역사'], area:'종로구',
+ coord:{lat:37.5745,lng:126.9857},
+ spots:[
+  {name:'안국역 6번출구', cat:'시작점'},
+  {name:'경인미술관(전통다원)', cat:'미술관+전통찻집', walk:'5분', note:'한옥 갤러리 안 전통찻집'},
+  {name:'노화랑', cat:'갤러리', walk:'4분'},
+  {name:'선화랑', cat:'갤러리', walk:'3분'},
+  {name:'쌈지길', cat:'볼거리·공예쇼핑', walk:'5분'},
+  {name:'방태막국수', cat:'분식/한식', walk:'4분', note:'막국수+감자전+굴림만두'},
+  {name:'인사동촌', cat:'한식(한정식)', walk:'3분', note:'남촌·북촌·서촌 정식'},
+  {name:'종각역', cat:'종료점', walk:'8분'},
+ ]},
+{id:'pyeongchang-buam', name:'평창동·부암동', type:'지역형', themes:['미술관','야경·전망','산책·자연'], area:'종로구',
+ coord:{lat:37.6100,lng:126.9691},
+ spots:[
+  {name:'가나아트센터', cat:'갤러리'},
+  {name:'김종영미술관', cat:'미술관', walk:'5분'},
+  {name:'토탈미술관', cat:'미술관', walk:'4분'},
+  {name:'(고개 넘어 부암동)', cat:'이동', walk:'도보20분/마을버스', note:'경사 있음'},
+  {name:'부암동 돈가스집 1979', cat:'한식(돈가스)', walk:'5분', note:'환기미술관 바로 아래'},
+  {name:'환기미술관', cat:'미술관', walk:'2분'},
+  {name:'내추럴 와인바 야드', cat:'와인바', walk:'1분', note:'환기미술관 바로 옆'},
+  {name:'자하미술관', cat:'미술관', walk:'6분', note:'서울에서 가장 높은 곳의 미술관, 인왕산·북악산 전망'},
+  {name:'부암동 스코프', cat:'카페(디저트)', walk:'5분', note:'영국식 베이커리'},
+ ]},
+{id:'jamsil', name:'잠실', type:'지역형', themes:['미술관','야경·전망'], area:'송파구',
+ coord:{lat:37.5133,lng:127.1001},
+ spots:[
+  {name:'잠실역', cat:'시작점'},
+  {name:'롯데뮤지엄', cat:'미술관', walk:'2분', note:'롯데월드타워 7층, 현대미술 전문'},
+  {name:'석촌호수', cat:'볼거리', walk:'5분', note:'산책로, 벚꽃·야경 명소'},
+  {name:'오모리찌개집', cat:'한식', walk:'6분', note:'잠실 토박이 숨은맛집, 3년 숙성 김치찌개'},
+  {name:'카페 이클립스', cat:'카페', walk:'3분', note:'석촌호수 바로 앞 테라스뷰'},
+ ]},
+{id:'seodaemun', name:'서대문', type:'지역형', themes:['전통·역사','산책·자연'], area:'서대문구',
+ coord:{lat:37.5741,lng:126.9576},
+ spots:[
+  {name:'독립문역 5번출구', cat:'시작점'},
+  {name:'서대문형무소역사관', cat:'볼거리(역사)', walk:'3분'},
+  {name:'안산자락길(일부)', cat:'볼거리·산책', walk:'10분', note:'무장애 숲길, 전체 7km 중 일부만 걸어도 됨'},
+  {name:'연희동', cat:'이동', walk:'궁동산 넘어'},
+  {name:'목란', cat:'중식', walk:'5분', note:'이연복 셰프 운영, 예약 필수'},
+  {name:'콘하스', cat:'카페', walk:'3분', note:'컨테이너 인테리어 빈티지 카페'},
+ ]},
+{id:'sinsa-dosan', name:'신사동·도산대로', type:'지역형', themes:['미술관','핫플레이스'], area:'강남구',
+ coord:{lat:37.5163,lng:127.0203},
+ spots:[
+  {name:'신사역', cat:'시작점'},
+  {name:'서울옥션 강남센터', cat:'경매장', walk:'5분'},
+  {name:'케이옥션', cat:'경매장', walk:'5분'},
+  {name:'리안갤러리 서울', cat:'갤러리', walk:'5분'},
+  {name:'조현화랑 서울', cat:'갤러리', walk:'3분'},
+  {name:'새들러하우스', cat:'카페', walk:'5분', note:'가죽공방 겸 카페'},
+  {name:'둘세이수와베', cat:'와인바', walk:'5분', note:'가로수길 안쪽, 조용한 와인바'},
+ ]},
+{id:'downtown', name:'도심(광화문·남대문·서부역)', type:'지역형', themes:['전통·역사','산책·자연'], area:'중구',
+ coord:{lat:37.5720,lng:126.9769},
+ spots:[
+  {name:'광화문광장', cat:'볼거리'},
+  {name:'정동길·덕수궁 돌담길', cat:'볼거리', walk:'6분', note:'국립현대미술관 덕수궁관 연결 가능'},
+  {name:'커피루소 정동', cat:'카페', walk:'2분'},
+  {name:'서울시청·서울광장', cat:'볼거리', walk:'5분'},
+  {name:'숭례문(남대문)', cat:'볼거리', walk:'6분'},
+  {name:'남대문시장 갈치조림골목', cat:'한식', walk:'3분'},
+  {name:'서울로7017', cat:'볼거리·산책', walk:'8분', note:'서울역 고가 보행길'},
+  {name:'더하우스1932', cat:'카페', walk:'10분', note:'만리동, 서울역 뒷동네 이색카페 골목'},
+ ]},
+{id:'hongdae-yeonnam', name:'홍대·연남동', type:'지역형', themes:['미술관','핫플레이스'], area:'마포구',
+ coord:{lat:37.5572,lng:126.9245},
+ spots:[
+  {name:'홍대입구역', cat:'시작점'},
+  {name:'갤러리 덕스', cat:'갤러리(소형)', walk:'1분'},
+  {name:'경의선숲길(연트럴파크)', cat:'볼거리·산책', walk:'5분'},
+  {name:'연남동 맛집골목', cat:'다국적', walk:'5분'},
+  {name:'홍대·합정·상수 와인바', cat:'와인바', walk:'10분', note:'구체 상호는 추후 조사'},
+ ]},
+{id:'seongsu', name:'성수동', type:'지역형', themes:['미술관','핫플레이스','와인·나이트라이프'], area:'성동구',
+ coord:{lat:37.5445,lng:127.0559},
+ spots:[
+  {name:'성수역', cat:'시작점'},
+  {name:'디뮤지엄', cat:'미술관', walk:'8분'},
+  {name:'서울숲', cat:'볼거리·산책', walk:'10분'},
+  {name:'로우키 성수', cat:'카페', walk:'5분', note:'성수 대표 스페셜티커피'},
+  {name:'리타르단도', cat:'와인바', walk:'5분', note:'간판 없는 지하 숨은 와인바'},
+ ]},
+{id:'itaewon', name:'이태원', type:'지역형', themes:['와인·나이트라이프','핫플레이스'], area:'용산구',
+ coord:{lat:37.5344,lng:126.9908},
+ spots:[
+  {name:'녹사평역', cat:'시작점'},
+  {name:'경리단길', cat:'볼거리·산책', walk:'8분'},
+  {name:'더젤(THE JELL)', cat:'와인바', walk:'5분', note:'24년 역사, 1세대 와인샵, 남산뷰'},
+  {name:'이태원 앤틱거리', cat:'볼거리', walk:'6분'},
+ ]},
+{id:'gangnam-station', name:'강남역', type:'지역형', themes:['핫플레이스'], area:'강남구',
+ coord:{lat:37.4979,lng:127.0276},
+ spots:[
+  {name:'강남역', cat:'시작점'},
+  {name:'강남 진해장', cat:'한식', walk:'6분', note:'현지인 내장탕 노포'},
+  {name:'골목집', cat:'한식(주점)', walk:'3분', note:'막걸리·김치전'},
+  {name:'교보타워 사거리·센터필드', cat:'볼거리', walk:'5분'},
+ ]},
+{id:'ddp-market', name:'동대문·신당동 시장투어', type:'지역형', themes:['시장'], area:'중구',
+ coord:{lat:37.5665,lng:127.0092},
+ spots:[
+  {name:'DDP(동대문역사문화공원역)', cat:'복합문화공간'},
+  {name:'광장시장', cat:'시장·맛집', walk:'8분', note:'빈대떡·마약김밥·육회'},
+  {name:'동대문종합시장·평화시장', cat:'시장', walk:'5분', note:'원단·의류 도매'},
+  {name:'서울중앙시장(힙당동)', cat:'시장·카페', walk:'신당역 이동', note:'옥경이네 건생선, 청년창업 카페'},
+ ]},
+{id:'doseong-naksan', name:'도성 · 낙산구간', type:'루트형', themes:['전통·역사','산책·자연'], area:'종로구',
+ coord:{lat:37.5807,lng:127.0074},
+ spots:[
+  {name:'혜화문', cat:'시작점'},
+  {name:'낙산공원', cat:'볼거리·산책', walk:'15분'},
+  {name:'이화벽화마을', cat:'볼거리', walk:'10분'},
+  {name:'흥인지문', cat:'종료점', walk:'15분', note:'약 1시간, 가장 가벼운 구간'},
+ ]},
+];
+const THEMES = ['전체','미술관','시장','야경·전망','전통·역사','산책·자연','와인·나이트라이프','핫플레이스'];
+let activeTheme='전체';
+
+function renderThemeChips(){
+  const wrap=document.getElementById('themeChips'); wrap.innerHTML='';
+  THEMES.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='chip'+(t===activeTheme?' active':'');
+    b.textContent=t;
+    b.onclick=()=>{ activeTheme=t; renderThemeChips(); renderCourseList(); };
+    wrap.appendChild(b);
+  });
+}
+function renderCourseList(){
+  const wrap=document.getElementById('courseList'); wrap.innerHTML='';
+  const list = activeTheme==='전체' ? COURSES : COURSES.filter(c=>c.themes.includes(activeTheme));
+  if(!list.length){ wrap.innerHTML='<div class="empty">이 테마의 코스가 아직 없어요.</div>'; return; }
+  list.forEach(c=>{
+    const card=document.createElement('div'); card.className='card';
+    card.style.cursor='pointer';
+    card.onclick=()=>openCourseDetail(c.id);
+    card.innerHTML = `
+      <h3>${c.name}</h3>
+      <div class="meta">${c.type} · ${c.area} · 스팟 ${c.spots.length}곳</div>
+      <div class="desc">${c.spots.slice(0,4).map(s=>s.name).join(' → ')}${c.spots.length>4?' …':''}</div>
+      <div class="tagrow">${c.themes.map(t=>`<span class="tag${t==='와인·나이트라이프'?' wine':''}">${t}</span>`).join('')}</div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+function openCourseDetail(id){
+  const c = COURSES.find(x=>x.id===id); if(!c) return;
+  document.getElementById('courseDetailTitle').textContent = c.name;
+  const body = document.getElementById('courseDetailBody');
+  body.innerHTML = `
+    <div class="tagrow" style="margin-bottom:14px;">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    ${c.spots.map((s,i)=>`
+      <div class="spotStep">
+        <div class="spotNum">${i+1}</div>
+        <div class="spotInfo">
+          <h4>${s.name}</h4>
+          <div class="cat">${s.cat}</div>
+          ${s.note?`<div class="note">${s.note}</div>`:''}
+        </div>
+      </div>
+      ${s.walk?`<div class="walkNote">도보 ${s.walk}</div>`:''}
+    `).join('')}
+  `;
+  document.getElementById('courseDetail').classList.add('show');
+}
+function closeDetail(id){ document.getElementById(id).classList.remove('show'); }
+
+/* =====================================================================
+   맛집·와인 — 참조리스트(curated) + 버킷리스트(Firestore)
+===================================================================== */
+const FOOD_REF = [
+ {name:'삼청동수제비', cat:'한식', area:'삼청동', note:'1982년부터, 수제비·감자전 노포'},
+ {name:'서울서 둘째로 잘하는 집', cat:'카페', area:'삼청동', note:'단팥죽·수정과'},
+ {name:'카페3청', cat:'카페', area:'삼청동', note:'간판 없는 개인카페'},
+ {name:'마하 한남', cat:'카페', area:'한남동', note:'골목 안 빈티지, 한강뷰 테라스'},
+ {name:'라라브레드 한남점', cat:'카페', area:'한남동', note:'골목 안 숨은 디저트카페'},
+ {name:'히든배럴 한남', cat:'와인', area:'한남동', note:'지하, 숨은 와이너리 컨셉'},
+ {name:'방태막국수', cat:'분식', area:'인사동', note:'막국수+감자전+굴림만두'},
+ {name:'인사동촌', cat:'한식', area:'인사동', note:'남촌·북촌·서촌 정식'},
+ {name:'부암동 돈가스집 1979', cat:'한식', area:'부암동', note:'환기미술관 바로 아래'},
+ {name:'내추럴 와인바 야드', cat:'와인', area:'부암동', note:'환기미술관 바로 옆'},
+ {name:'부암동 스코프', cat:'카페', area:'부암동', note:'영국식 베이커리'},
+ {name:'오모리찌개집', cat:'한식', area:'잠실', note:'잠실 토박이 노포, 3년숙성 김치찌개'},
+ {name:'카페 이클립스', cat:'카페', area:'잠실', note:'석촌호수 테라스뷰'},
+ {name:'목란', cat:'중식', area:'연희동', note:'이연복 셰프, 예약 필수'},
+ {name:'콘하스', cat:'카페', area:'연희동', note:'컨테이너 인테리어'},
+ {name:'새들러하우스', cat:'카페', area:'신사동', note:'가죽공방 겸 카페'},
+ {name:'둘세이수와베', cat:'와인', area:'신사동', note:'가로수길 안쪽 조용한 와인바'},
+ {name:'커피루소 정동', cat:'카페', area:'정동', note:'브런치·원두 판매'},
+ {name:'남대문시장 갈치조림골목', cat:'한식', area:'남대문', note:'남대문 명물'},
+ {name:'더하우스1932', cat:'카페', area:'만리동', note:'서울역 뒷동네 이색카페'},
+ {name:'로우키 성수', cat:'카페', area:'성수동', note:'성수 대표 스페셜티커피'},
+ {name:'리타르단도', cat:'와인', area:'성수동', note:'간판 없는 지하 숨은 와인바'},
+ {name:'더젤(THE JELL)', cat:'와인', area:'이태원', note:'24년 역사, 1세대 와인샵'},
+ {name:'강남 진해장', cat:'한식', area:'강남역', note:'현지인 내장탕 노포'},
+ {name:'골목집', cat:'한식', area:'강남역', note:'막걸리·김치전'},
+ {name:'옥경이네 건생선', cat:'기타', area:'신당동', note:'서울중앙시장 대표 건어물'},
+];
+const FOOD_CATS = ['전체','한식','분식','양식','일식','중식','카페','와인','기타'];
+let foodSource='curated', activeFoodCat='전체';
+let bucketPlaces=[]; // Firestore에서 로드
+
+function renderFoodCatChips(){
+  const wrap=document.getElementById('foodCatChips'); wrap.innerHTML='';
+  FOOD_CATS.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='chip'+(c===activeFoodCat?' active':'');
+    b.textContent=c;
+    b.onclick=()=>{ activeFoodCat=c; renderFoodCatChips(); renderFoodList(); };
+    wrap.appendChild(b);
+  });
+}
+function setFoodSource(src){
+  foodSource=src;
+  document.getElementById('foodSrcCurated').classList.toggle('active', src==='curated');
+  document.getElementById('foodSrcBucket').classList.toggle('active', src==='bucket');
+  renderFoodList();
+}
+function renderFoodList(){
+  const wrap=document.getElementById('foodList'); wrap.innerHTML='';
+  let list = foodSource==='curated' ? FOOD_REF : bucketPlaces;
+  if(activeFoodCat!=='전체') list = list.filter(p=>p.cat===activeFoodCat);
+  if(!list.length){
+    wrap.innerHTML = `<div class="empty">${foodSource==='curated' ? '이 카테고리의 참조 장소가 아직 없어요.' : '아직 버킷리스트에 담긴 곳이 없어요. 아래 버튼으로 추가해보세요.'}</div>`;
+    return;
+  }
+  list.forEach((p,i)=>{
+    const card=document.createElement('div'); card.className='card';
+    card.style.cursor='pointer';
+    card.onclick=()=>openPlaceDetail(foodSource, i);
+    card.innerHTML = `
+      <h3>${p.name}</h3>
+      <div class="meta">${p.cat} · ${p.area||''}</div>
+      ${p.note?`<div class="desc">${p.note}</div>`:''}
+      ${p.status?`<div class="tagrow"><span class="tag">${p.status}</span></div>`:''}
+    `;
+    wrap.appendChild(card);
+  });
+}
+function openPlaceDetail(src, idx){
+  const p = (src==='curated'?FOOD_REF:bucketPlaces)[idx]; if(!p) return;
+  document.getElementById('placeDetailTitle').textContent = p.name;
+  const body = document.getElementById('placeDetailBody');
+  body.innerHTML = `
+    <div class="tagrow" style="margin-bottom:10px;"><span class="tag">${p.cat}</span>${p.area?`<span class="tag">${p.area}</span>`:''}</div>
+    ${p.note?`<p style="font-size:14px;line-height:1.6;">${p.note}</p>`:''}
+    ${p.memo?`<p style="font-size:13.5px;color:var(--brand2);background:#F1ECDF;padding:10px 12px;border-radius:10px;">📝 ${p.memo}</p>`:''}
+    ${p.lat ? `<button class="btn secondary" style="margin-top:8px;" onclick="openRouteSheetTo(${p.lat},${p.lng},'${p.name.replace(/'/g,"")}')">여기로 길찾기</button>` : ''}
+    ${src==='bucket' ? `<button class="btn" style="background:${p.status==='다녀옴'?'var(--muted)':'var(--brand2)'};margin-top:8px;" onclick="toggleVisited(${idx})">${p.status==='다녀옴' ? '✓ 다녀왔어요' : '다녀왔어요로 표시'}</button>` : ''}
+  `;
+  document.getElementById('placeDetail').classList.add('show');
+}
+async function toggleVisited(idx){
+  const p = bucketPlaces[idx]; if(!p || !p.docId) return;
+  const next = p.status==='다녀옴' ? '가고싶어요' : '다녀옴';
+  try{
+    await db.collection('seoul_places').doc(p.docId).update({status: next});
+    p.status = next;
+    openPlaceDetail('bucket', idx);
+    renderFoodList();
+  }catch(e){ console.error(e); }
+}
+
+/* ---- 버킷리스트 추가: 카카오 검색 ---- */
+let kakaoPlacesService=null;
+let pendingPlace=null;
+function openAddPlaceSheet(){
+  document.getElementById('placeSearchInput').value='';
+  document.getElementById('placeSearchResults').innerHTML='';
+  document.getElementById('addPlaceOverlay').classList.add('show');
+}
+function closeSheet(id){ document.getElementById(id).classList.remove('show'); }
+function searchPlaceForAdd(){
+  const q=document.getElementById('placeSearchInput').value.trim();
+  const wrap=document.getElementById('placeSearchResults');
+  if(!q || !kakaoPlacesService){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색어를 입력해주세요.</p>'; return; }
+  wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색 중…</p>';
+  kakaoPlacesService.keywordSearch(q, (data, status)=>{
+    if(status!==kakao.maps.services.Status.OK || !data.length){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색 결과가 없어요.</p>'; return; }
+    wrap.innerHTML='';
+    data.slice(0,8).forEach(d=>{
+      const row=document.createElement('div'); row.className='searchResult';
+      row.innerHTML = `<div><div class="n">${d.place_name}</div><div class="a">${d.road_address_name||d.address_name}</div></div><button class="smallBtn">선택</button>`;
+      row.querySelector('button').onclick=()=>{
+        pendingPlace = {name:d.place_name, address:d.road_address_name||d.address_name, lat:parseFloat(d.y), lng:parseFloat(d.x)};
+        closeSheet('addPlaceOverlay');
+        document.getElementById('pickCategoryPlaceName').textContent = pendingPlace.name;
+        document.getElementById('pickCategoryMemo').value='';
+        document.getElementById('pickCategoryOverlay').classList.add('show');
+      };
+      wrap.appendChild(row);
+    }, {size:8});
+  });
+}
+async function confirmAddPlace(){
+  if(!pendingPlace || !currentUser) return;
+  const cat = document.getElementById('pickCategorySelect').value;
+  const memo = document.getElementById('pickCategoryMemo').value.trim();
+  try{
+    await db.collection('seoul_places').add({
+      name: pendingPlace.name, address: pendingPlace.address,
+      lat: pendingPlace.lat, lng: pendingPlace.lng,
+      cat, memo, status:'가고싶어요',
+      addedBy: myNickname, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeSheet('pickCategoryOverlay');
+    pendingPlace=null;
+    await loadBucketPlaces();
+    setFoodSource('bucket');
+  }catch(e){ console.error(e); alert('저장에 실패했어요.'); }
+}
+async function loadBucketPlaces(){
+  if(!db) return;
+  try{
+    const snap = await db.collection('seoul_places').orderBy('createdAt','desc').get();
+    bucketPlaces = snap.docs.map(d=>({docId:d.id, ...d.data()}));
+  }catch(e){ console.error(e); bucketPlaces=[]; }
+  renderFoodList(); renderMapMarkers();
+}
+
+/* =====================================================================
+   교통 — 즐겨찾기(귀가거점) + 길찾기 딥링크
+===================================================================== */
+let favorites=[];
+function renderFavList(){
+  const wrap=document.getElementById('favList'); wrap.innerHTML='';
+  if(!favorites.length){ wrap.innerHTML='<div class="empty">아직 등록된 즐겨찾기가 없어요.</div>'; return; }
+  favorites.forEach((f,i)=>{
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML = `
+      <h3>${f.name}</h3>
+      <div class="meta">${f.address||''}</div>
+      <div class="rowBtns">
+        <button class="btn secondary" style="flex:1;" onclick="openRouteSheetTo(${f.lat},${f.lng},'${f.name.replace(/'/g,"")}')">여기로 길찾기</button>
+        <button class="smallBtn" onclick="deleteFav('${f.docId}')">삭제</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+function openAddFavSheet(){
+  document.getElementById('favSearchInput').value='';
+  document.getElementById('favSearchResults').innerHTML='';
+  document.getElementById('addFavOverlay').classList.add('show');
+}
+function searchFavForAdd(){
+  const q=document.getElementById('favSearchInput').value.trim();
+  const wrap=document.getElementById('favSearchResults');
+  if(!q || !kakaoPlacesService){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색어를 입력해주세요.</p>'; return; }
+  wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색 중…</p>';
+  kakaoPlacesService.keywordSearch(q, (data, status)=>{
+    if(status!==kakao.maps.services.Status.OK || !data.length){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색 결과가 없어요.</p>'; return; }
+    wrap.innerHTML='';
+    data.slice(0,8).forEach(d=>{
+      const row=document.createElement('div'); row.className='searchResult';
+      row.innerHTML = `<div><div class="n">${d.place_name}</div><div class="a">${d.road_address_name||d.address_name}</div></div><button class="smallBtn">추가</button>`;
+      row.querySelector('button').onclick=async ()=>{
+        try{
+          await db.collection('seoul_favorites').add({
+            name:d.place_name, address:d.road_address_name||d.address_name,
+            lat:parseFloat(d.y), lng:parseFloat(d.x),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          closeSheet('addFavOverlay');
+          await loadFavorites();
+        }catch(e){ console.error(e); }
+      };
+      wrap.appendChild(row);
+    }, {size:8});
+  });
+}
+async function deleteFav(docId){
+  if(!confirm('삭제할까요?')) return;
+  try{ await db.collection('seoul_favorites').doc(docId).delete(); await loadFavorites(); }catch(e){ console.error(e); }
+}
+async function loadFavorites(){
+  if(!db) return;
+  try{
+    const snap = await db.collection('seoul_favorites').orderBy('createdAt','desc').get();
+    favorites = snap.docs.map(d=>({docId:d.id, ...d.data()}));
+  }catch(e){ console.error(e); favorites=[]; }
+  renderFavList();
+  populateRouteSelects();
+}
+
+/* ---- 길찾기 시트 ---- */
+let routeGps=null;
+async function getGpsCoords(){
+  return new Promise((resolve)=>{
+    if(!navigator.geolocation){ resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos=>resolve({lat:pos.coords.latitude, lng:pos.coords.longitude}),
+      ()=>resolve(null), {timeout:5000, maximumAge:10*60*1000}
+    );
+  });
+}
+function populateRouteSelects(){
+  ['routeFrom','routeTo'].forEach(id=>{
+    const sel=document.getElementById(id);
+    sel.innerHTML = '<option value="gps">내 위치</option>';
+    favorites.forEach(f=>{
+      const o=document.createElement('option'); o.value='fav:'+f.docId; o.textContent=f.name;
+      sel.appendChild(o);
+    });
+    COURSES.forEach(c=>{
+      const o=document.createElement('option'); o.value='course:'+c.id; o.textContent='📍 '+c.name;
+      sel.appendChild(o);
+    });
+  });
+}
+function openRouteSheet(){ document.getElementById('routeOverlay').classList.add('show'); }
+function openRouteSheetTo(lat,lng,name){
+  document.getElementById('routeTo').innerHTML = `<option value="direct:${lat}:${lng}">${name}</option>` + document.getElementById('routeTo').innerHTML;
+  document.getElementById('routeOverlay').classList.add('show');
+}
+async function resolveRoutePoint(val){
+  if(val==='gps'){
+    const g = await getGpsCoords();
+    return g ? {lat:g.lat, lng:g.lng, name:'내 위치'} : null;
+  }
+  if(val.startsWith('fav:')){
+    const f = favorites.find(x=>x.docId===val.slice(4));
+    return f ? {lat:f.lat, lng:f.lng, name:f.name} : null;
+  }
+  if(val.startsWith('course:')){
+    const c = COURSES.find(x=>x.id===val.slice(7));
+    return c ? {lat:c.coord.lat, lng:c.coord.lng, name:c.name} : null;
+  }
+  if(val.startsWith('direct:')){
+    const [,lat,lng] = val.split(':');
+    return {lat:parseFloat(lat), lng:parseFloat(lng), name:'선택한 장소'};
+  }
+  return null;
+}
+async function launchRoute(){
+  const fromVal=document.getElementById('routeFrom').value;
+  const toVal=document.getElementById('routeTo').value;
+  const mode=document.getElementById('routeMode').value;
+  const from = await resolveRoutePoint(fromVal);
+  const to = await resolveRoutePoint(toVal);
+  if(!from || !to){ alert('출발지/도착지 좌표를 확인하지 못했어요. 위치 권한을 확인해주세요.'); return; }
+  const url = `https://m.map.kakao.com/scheme/route?sp=${from.lat},${from.lng}&ep=${to.lat},${to.lng}&by=${mode}`;
+  window.open(url, '_blank');
+}
+
+/* =====================================================================
+   지도
+===================================================================== */
+let kakaoMap=null;
+const MAP_CATS = ['전체','동네투어','맛집·와인','즐겨찾기'];
+let activeMapCat='전체';
+function renderMapFilterChips(){
+  const wrap=document.getElementById('mapFilterChips'); wrap.innerHTML='';
+  MAP_CATS.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='chip'+(c===activeMapCat?' active':'');
+    b.style.background = c===activeMapCat ? 'var(--brand)' : '#fff';
+    b.textContent=c;
+    b.onclick=()=>{ activeMapCat=c; renderMapFilterChips(); renderMapMarkers(); };
+    wrap.appendChild(b);
+  });
+}
+let mapMarkers=[];
+function ensureKakaoMap(){
+  if(kakaoMap || !window.kakao || !window.kakao.maps) return;
+  kakao.maps.load(()=>{
+    const container = document.getElementById('kakaoMap');
+    kakaoMap = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(37.5665,126.9780), level:8 });
+    kakaoPlacesService = new kakao.maps.services.Places();
+    renderMapMarkers();
+  });
+}
+function renderMapMarkers(){
+  if(!kakaoMap) return;
+  mapMarkers.forEach(m=>m.setMap(null)); mapMarkers=[];
+  const addMarker=(lat,lng,title,emoji)=>{
+    const pos = new kakao.maps.LatLng(lat,lng);
+    const marker = new kakao.maps.Marker({position:pos, map:kakaoMap});
+    const iw = new kakao.maps.InfoWindow({content:`<div style="padding:6px 9px;font-size:12px;">${emoji} ${title}</div>`});
+    kakao.maps.event.addListener(marker,'click',()=>iw.open(kakaoMap,marker));
+    mapMarkers.push(marker);
+  };
+  if(activeMapCat==='전체' || activeMapCat==='동네투어'){
+    COURSES.forEach(c=> addMarker(c.coord.lat, c.coord.lng, c.name, '🏘️'));
+  }
+  if(activeMapCat==='전체' || activeMapCat==='맛집·와인'){
+    bucketPlaces.forEach(p=>{ if(p.lat) addMarker(p.lat, p.lng, p.name, p.cat==='와인'?'🍷':'🍽️'); });
+  }
+  if(activeMapCat==='전체' || activeMapCat==='즐겨찾기'){
+    favorites.forEach(f=> addMarker(f.lat, f.lng, f.name, '⭐'));
+  }
+}
+
+/* =====================================================================
+   초기화
+===================================================================== */
+function initAppData(){
+  renderThemeChips(); renderCourseList();
+  renderFoodCatChips(); renderFoodList();
+  loadBucketPlaces();
+  loadFavorites();
+  switchTab('map');
+}
+</script>
+</body>
+</html>

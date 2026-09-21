@@ -27,18 +27,18 @@ body{
   font-family:'Noto Sans KR',system-ui,sans-serif;
   background:var(--paper); color:var(--ink);
   -webkit-font-smoothing:antialiased;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
 }
 h1,h2,h3,.serif{font-family:'Noto Serif KR',serif;}
 button{font-family:inherit;}
-#app{display:none;height:100vh;display:none;flex-direction:column;}
+#app{display:none; height:100vh; height:100dvh; flex-direction:column;}
 #app.active{display:flex;}
 
 /* ---------- 로그인 ---------- */
 #authScreen{
-  min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+  min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; justify-content:center;
   padding:32px 24px; max-width:420px; margin:0 auto;
+  padding-top:calc(32px + env(safe-area-inset-top,0px));
+  padding-bottom:calc(32px + env(safe-area-inset-bottom,0px));
 }
 #authScreen h1{font-size:26px; margin:0 0 4px; letter-spacing:-0.3px;}
 #authScreen .sub{color:var(--muted); font-size:13.5px; margin-bottom:28px;}
@@ -62,7 +62,8 @@ button{font-family:inherit;}
 /* ---------- 앱 셸 ---------- */
 .topbar{
   display:flex; align-items:center; justify-content:space-between;
-  padding:12px 16px; background:var(--paper); border-bottom:1px solid var(--line);
+  padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top,0px));
+  background:var(--paper); border-bottom:1px solid var(--line);
   flex-shrink:0;
 }
 .topbar h1{font-size:19px; margin:0;}
@@ -101,6 +102,7 @@ button{font-family:inherit;}
 .empty{padding:32px 16px; text-align:center; color:var(--muted); font-size:13.5px;}
 
 /* ---------- 지도 ---------- */
+#tab-map{height:100%;}
 #mapWrap{position:relative; height:100%; display:flex; flex-direction:column;}
 #kakaoMap{flex:1; width:100%; background:#e8e4d8;}
 .mapToolbar{
@@ -405,7 +407,7 @@ function switchTab(name){
   document.querySelectorAll('.tabcontent').forEach(el=>el.style.display='none');
   document.getElementById('tab-'+name).style.display='block';
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
-  if(name==='map'){ document.getElementById('tab-map').querySelector('#mapWrap').style.height = (window.innerHeight - 132) + 'px'; ensureKakaoMap(); }
+  if(name==='map'){ ensureKakaoMap(); }
 }
 
 /* =====================================================================

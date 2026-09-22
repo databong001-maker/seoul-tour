@@ -177,6 +177,12 @@ button{font-family:inherit;}
   padding:12px 18px; font-size:13.5px; font-weight:700; box-shadow:0 3px 10px rgba(0,0,0,.2);
   cursor:pointer;
 }
+.mapResetFab{
+  position:absolute; left:14px; bottom:16px; z-index:5;
+  background:#fff; color:var(--ink); border:1px solid var(--line); border-radius:999px;
+  padding:10px 14px; font-size:12.5px; font-weight:700; box-shadow:0 3px 10px rgba(0,0,0,.15);
+  cursor:pointer;
+}
 
 /* ---------- 오버레이/바텀시트 ---------- */
 .overlay{
@@ -271,6 +277,7 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
       <div id="mapWrap">
         <div id="kakaoMap"></div>
         <div class="mapToolbar" id="mapFilterChips"></div>
+        <button class="mapResetFab" onclick="resetMapView()">🔍 전체보기</button>
         <button class="mapFab" onclick="openRouteSheet()">🚌 길찾기</button>
       </div>
     </div>
@@ -915,13 +922,9 @@ function openAreaDetail(id){
   if(backBtn) backBtn.onclick = ()=> closeDetail('courseDetail');
 }
 function focusAreaOnMap(course){
-  if(kakaoMap){
-    kakaoMap.setLevel(4);
-    kakaoMap.setCenter(new kakao.maps.LatLng(course.coord.lat, course.coord.lng));
-  }
-  openAreaDetail(course.id);
-  const backBtn = document.querySelector('#courseDetail .detailHead button');
-  if(backBtn) backBtn.onclick = ()=>{ closeDetail('courseDetail'); resetMapView(); };
+  if(!kakaoMap) return;
+  kakaoMap.setLevel(4);
+  kakaoMap.setCenter(new kakao.maps.LatLng(course.coord.lat, course.coord.lng));
 }
 function resetMapView(){
   if(!kakaoMap) return;
@@ -1365,7 +1368,16 @@ function renderMapMarkers(){
     COURSES.forEach(c=>{
       const pos = new kakao.maps.LatLng(c.coord.lat, c.coord.lng);
       const marker = new kakao.maps.Marker({position:pos, map:kakaoMap});
-      kakao.maps.event.addListener(marker,'click',()=> focusAreaOnMap(c));
+      const iw = new kakao.maps.InfoWindow({
+        content: `<div style="padding:9px 11px;font-size:12.5px;text-align:center;min-width:110px;">
+          <div style="font-weight:700;margin-bottom:7px;">🏘️ ${c.name}</div>
+          <button onclick="openAreaDetail('${c.id}')" style="border:none;background:#A23E2C;color:#fff;padding:6px 11px;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;">코스 보기 ›</button>
+        </div>`
+      });
+      kakao.maps.event.addListener(marker,'click',()=>{
+        focusAreaOnMap(c);
+        iw.open(kakaoMap, marker);
+      });
       mapMarkers.push(marker);
     });
   }

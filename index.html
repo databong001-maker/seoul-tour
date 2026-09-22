@@ -127,41 +127,50 @@ button{font-family:inherit;}
 .menuTile .sub{font-size:11px; color:var(--muted);}
 .homeDivider{margin:6px 20px 0; border:none; border-top:1px solid var(--line);}
 .homeFoot{padding:18px 20px 32px; font-size:12px; color:var(--muted); text-align:center;}
-.choiceRow{display:flex; gap:12px; padding:4px 20px 22px;}
-.choiceCard{
-  flex:1; background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-  padding:20px 14px; text-align:center; cursor:pointer; box-shadow:var(--shadow);
+.homeCourseLink{
+  display:block; width:calc(100% - 40px); margin:2px 20px 14px; padding:13px 16px;
+  border-radius:12px; background:#fff; border:1px solid var(--line);
+  font-size:13.5px; font-weight:700; color:var(--ink); text-align:left; cursor:pointer;
 }
-.choiceCard:active{transform:scale(.97);}
-.choiceCard .ic{font-size:30px; display:block; margin-bottom:8px;}
-.choiceCard .lb{font-size:14.5px; font-weight:700;}
-.choiceCard .sub{font-size:11px; color:var(--muted); margin-top:3px;}
-.homeThemeGrid{display:none;}
-.homeThemeGrid.show{display:block;}
-.homeThemeGrid .backLink{padding:0 20px 10px; display:block;}
+.homeCourseLink:active{transform:scale(.98);}
 
-/* ---------- 룰렛 ---------- */
-.rouletteWrap{padding:18px 0 6px; text-align:center;}
+/* ---------- 룰렛 (일부러 튀는 색감 + 움직임) ---------- */
+.rouletteWrap{padding:14px 0 10px; text-align:center;}
 .rouletteWrap h3{font-size:13px; color:var(--muted); font-weight:700; margin:0 0 14px;}
-.rouletteStage{position:relative; width:200px; height:200px; margin:0 auto 14px;}
+.rouletteStage{position:relative; width:220px; height:220px; margin:0 auto 16px;}
+@keyframes wheelGlow{
+  0%,100%{ box-shadow:0 0 0 0 rgba(226,90,46,.35), 0 10px 24px rgba(28,27,24,.18); }
+  50%{ box-shadow:0 0 0 16px rgba(226,90,46,0), 0 10px 24px rgba(28,27,24,.18); }
+}
+@keyframes pointerBob{
+  0%,100%{ transform:translateX(-50%) translateY(0) rotate(0deg); }
+  50%{ transform:translateX(-50%) translateY(4px) rotate(-6deg); }
+}
+@keyframes btnPulse{
+  0%,100%{ transform:scale(1); }
+  50%{ transform:scale(1.05); }
+}
 .roulettePointer{
-  position:absolute; top:-4px; left:50%; transform:translateX(-50%);
-  width:0; height:0; border-left:9px solid transparent; border-right:9px solid transparent;
-  border-top:16px solid var(--ink); z-index:2;
+  position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+  width:0; height:0; border-left:11px solid transparent; border-right:11px solid transparent;
+  border-top:20px solid var(--ink); z-index:2; filter:drop-shadow(0 2px 2px rgba(0,0,0,.25));
+  animation:pointerBob 1.1s ease-in-out infinite;
 }
 .rouletteWheel{
-  width:200px; height:200px; border-radius:50%; border:4px solid #fff;
-  box-shadow:0 2px 4px rgba(0,0,0,.1), 0 10px 24px rgba(28,27,24,.18);
-  transform:rotate(0deg);
+  width:220px; height:220px; border-radius:50%; border:5px solid #fff;
+  box-shadow:0 10px 24px rgba(28,27,24,.18);
+  animation:wheelGlow 1.8s ease-out infinite;
 }
 .rouletteHub{
-  position:absolute; top:50%; left:50%; width:34px; height:34px; margin:-17px 0 0 -17px;
-  background:#fff; border-radius:50%; box-shadow:0 1px 4px rgba(0,0,0,.2);
-  display:flex; align-items:center; justify-content:center; font-size:15px; z-index:2;
+  position:absolute; top:50%; left:50%; width:40px; height:40px; margin:-20px 0 0 -20px;
+  background:#fff; border-radius:50%; box-shadow:0 1px 4px rgba(0,0,0,.25);
+  display:flex; align-items:center; justify-content:center; font-size:18px; z-index:2;
 }
 .rouletteLegend{display:flex; flex-wrap:wrap; gap:6px 10px; justify-content:center; padding:0 16px 14px;}
-.legendItem{display:flex; align-items:center; gap:5px; font-size:11px; color:#4A473F;}
-.legendItem i{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;}
+.legendItem{display:flex; align-items:center; gap:5px; font-size:11px; color:#4A473F; font-weight:600;}
+.legendItem i{width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0;}
+.spinBtn{ animation:btnPulse 1.5s ease-in-out infinite; font-size:15px !important; padding:14px !important; }
+.spinBtn:active{ animation:none; transform:scale(.95); }
 
 /* ---------- 지도 ---------- */
 #tab-map{height:100%;}
@@ -251,25 +260,13 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
 
     <!-- 홈 탭 -->
     <div class="tabcontent" id="tab-home">
-      <div class="homeHero">
+      <div class="homeHero" style="padding-bottom:10px;">
         <p class="eyebrow">TODAY'S SEOUL</p>
         <h1 class="serif">오늘 어디 갈까?</h1>
-        <p>둘러볼까요, 룰렛에 맡길까요</p>
       </div>
-      <div class="choiceRow">
-        <button class="choiceCard" onclick="goToRecommend()">
-          <span class="ic">📋</span>
-          <span class="lb">추천 코스 가기</span>
-          <span class="sub">14개 동네 · 8개 테마 둘러보기</span>
-        </button>
-        <button class="choiceCard" onclick="openRouletteFlow()">
-          <span class="ic">🎯</span>
-          <span class="lb">룰렛 돌리기</span>
-          <span class="sub">뭘 정했는지 알려주면 나머진 룰렛이</span>
-        </button>
-      </div>
-      <hr class="homeDivider">
-      <div class="homeFoot">언제든 아래 탭에서 다시 여기로 돌아올 수 있어요</div>
+      <button class="homeCourseLink" onclick="goToRecommend()">📋 추천 코스 둘러보기 (14개 동네 · 8개 테마) ›</button>
+      <div class="chiprow" id="homePriorityChips" style="padding:6px 20px 4px;"></div>
+      <div id="homeRouletteBody"></div>
     </div>
 
     <!-- 지도 탭 -->
@@ -342,15 +339,6 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
     <h2 id="placeDetailTitle"></h2>
   </div>
   <div class="detailBody" id="placeDetailBody"></div>
-</div>
-
-<!-- ============ 룰렛 흐름 오버레이 ============ -->
-<div class="detailOverlay" id="rouletteFlowOverlay">
-  <div class="detailHead">
-    <button onclick="closeDetail('rouletteFlowOverlay')">←</button>
-    <h2 id="rouletteFlowTitle">뭘 정했나요?</h2>
-  </div>
-  <div class="detailBody" id="rouletteFlowBody"></div>
 </div>
 
 <!-- ============ 장소 추가 바텀시트 ============ -->
@@ -515,6 +503,7 @@ function switchTab(name){
   document.getElementById('tab-'+name).style.display='block';
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   if(name==='map'){ ensureKakaoMap(); }
+  if(name==='home'){ homeMode='all'; renderHomePriorityChips(); dispatchHomeMode(); }
 }
 
 /* =====================================================================
@@ -722,20 +711,33 @@ function goToRecommend(){
 }
 
 /* =====================================================================
-   룰렛 흐름: 지역별 / 테마별 / 장소별 우선선택 → 룰렛 → 동네 상세
+   홈 룰렛: 전체 / 지역별 / 테마별 / 장소별 우선선택 → 룰렛 → 동네 상세
 ===================================================================== */
-function openRouletteFlow(){
-  document.getElementById('rouletteFlowOverlay').classList.add('show');
-  renderRouletteFlowStart();
+let homeMode='all';
+function renderHomePriorityChips(){
+  const wrap=document.getElementById('homePriorityChips'); if(!wrap) return; wrap.innerHTML='';
+  const opts=[{id:'all',label:'🎲 전체'},{id:'region',label:'🏘️ 지역별'},{id:'theme',label:'🎭 테마별'},{id:'spot',label:'📍 장소별'}];
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='chip'+(homeMode===o.id?' active':'');
+    b.textContent=o.label;
+    b.onclick=()=>{ homeMode=o.id; renderHomePriorityChips(); dispatchHomeMode(); };
+    wrap.appendChild(b);
+  });
 }
-function renderRouletteFlowStart(){
-  document.getElementById('rouletteFlowTitle').textContent='뭘 정했나요?';
-  document.getElementById('rouletteFlowBody').innerHTML = `
-    <p style="font-size:13px;color:var(--muted);margin:0 0 16px;">이미 정한 게 있으면 먼저 골라주세요 — 나머진 룰렛이 정해드려요</p>
-    <div class="routeCard" onclick="flowPickRegion()"><h3>🏘️ 지역별</h3><div class="meta">동네는 정했고, 오늘 뭘 할지는 룰렛으로</div></div>
-    <div class="routeCard" onclick="flowPickTheme()"><h3>🎭 테마별</h3><div class="meta">뭘 할지는 정했고, 동네는 룰렛으로</div></div>
-    <div class="routeCard" onclick="flowPickSpot()"><h3>📍 장소별</h3><div class="meta">가고 싶은 곳은 정했고, 오늘 테마는 룰렛으로</div></div>
+function dispatchHomeMode(){
+  if(homeMode==='all') renderAllWheel();
+  else if(homeMode==='region') flowPickRegion();
+  else if(homeMode==='theme') flowPickTheme();
+  else if(homeMode==='spot') flowPickSpot();
+}
+function renderAllWheel(){
+  document.getElementById('homeRouletteBody').innerHTML = `
+    <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:0 0 4px;">서울 14개 동네 전체 중에서 뽑아요</p>
+    ${flowWheelHTML()}
   `;
+  const items = COURSES.map(c=>({label:c.name, ref:c}));
+  setupFlowWheel(items, (winner)=> finishFlowToArea(winner.ref.id, null));
 }
 function flowWheelHTML(){
   return `<div class="rouletteWrap">
@@ -745,7 +747,7 @@ function flowWheelHTML(){
       <div class="rouletteHub">🎯</div>
     </div>
     <div class="rouletteLegend" id="flowLegend"></div>
-    <button class="btn" style="background:var(--gold); max-width:280px; margin:4px auto 0;" onclick="spinFlowWheel()">룰렛 돌리기</button>
+    <button class="btn spinBtn" style="background:var(--gold); max-width:280px; margin:4px auto 0;" onclick="spinFlowWheel()">🎯 룰렛 돌리기</button>
   </div>`;
 }
 let flowPool=[], flowRotation=0, flowSpinning=false, flowOnLand=null;
@@ -781,14 +783,13 @@ function spinFlowWheel(){
   }, 3300);
 }
 function finishFlowToArea(regionId, themeLabel){
-  document.getElementById('rouletteFlowBody').innerHTML = `
-    <div style="text-align:center;padding:50px 10px;">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">오늘의 테마</p>
-      <h2 class="serif" style="font-size:23px;">${themeLabel}</h2>
+  document.getElementById('homeRouletteBody').innerHTML = `
+    <div style="text-align:center;padding:44px 10px;">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">${themeLabel?'오늘의 테마':'당첨!'}</p>
+      <h2 class="serif" style="font-size:23px;">${themeLabel||(COURSES.find(c=>c.id===regionId)||{}).name||''}</h2>
     </div>
   `;
   setTimeout(()=>{
-    closeDetail('rouletteFlowOverlay');
     switchTab('course');
     openAreaDetail(regionId);
   }, 900);
@@ -796,17 +797,16 @@ function finishFlowToArea(regionId, themeLabel){
 
 /* ---- 지역별: 동네를 직접 고르고 → 테마 룰렛 ---- */
 function flowPickRegion(){
-  document.getElementById('rouletteFlowTitle').textContent='어느 동네로 갈까요?';
-  document.getElementById('rouletteFlowBody').innerHTML = `
-    <button class="backLink" onclick="renderRouletteFlowStart()">‹ 다시 선택</button>
+  document.getElementById('homeRouletteBody').innerHTML = `
+    <h3 class="serif" style="font-size:15.5px;margin:4px 20px 10px;">어느 동네로 갈까요?</h3>
     ${COURSES.map(c=>`<div class="routeCard" onclick="flowRegionChosen('${c.id}')"><h3>${c.name}</h3><div class="meta">${c.area} · ${c.themes.join(', ')}</div></div>`).join('')}
   `;
 }
 function flowRegionChosen(id){
   const area = COURSES.find(c=>c.id===id); if(!area) return;
-  document.getElementById('rouletteFlowTitle').textContent=`${area.name}에서 뭘 할까요?`;
-  document.getElementById('rouletteFlowBody').innerHTML = `
-    <button class="backLink" onclick="flowPickRegion()">‹ 다른 동네 고르기</button>
+  document.getElementById('homeRouletteBody').innerHTML = `
+    <button class="backLink" style="margin-left:20px;" onclick="flowPickRegion()">‹ 다른 동네 고르기</button>
+    <h3 class="serif" style="font-size:15.5px;margin:4px 20px 6px;">${area.name}에서 뭘 할까요?</h3>
     ${flowWheelHTML()}
   `;
   const items = THEMES.filter(t=>t!=='전체').map(t=>({label:t}));
@@ -815,9 +815,8 @@ function flowRegionChosen(id){
 
 /* ---- 테마별: 테마를 직접 고르고 → 동네 룰렛 ---- */
 function flowPickTheme(){
-  document.getElementById('rouletteFlowTitle').textContent='오늘 뭐 하고 싶어요?';
-  document.getElementById('rouletteFlowBody').innerHTML = `
-    <button class="backLink" onclick="renderRouletteFlowStart()">‹ 다시 선택</button>
+  document.getElementById('homeRouletteBody').innerHTML = `
+    <h3 class="serif" style="font-size:15.5px;margin:4px 20px 10px;">오늘 뭐 하고 싶어요?</h3>
     <div class="menuBoard">${THEMES.filter(t=>t!=='전체').map(t=>{
       const meta=THEME_META[t]||{icon:'📍',color:'var(--muted)',sub:''};
       return `<button class="menuTile" onclick="flowThemeChosen('${t}')"><span class="dot" style="background:${meta.color}"></span><span class="ic">${meta.icon}</span><span class="lb">${t}</span><span class="sub">${meta.sub}</span></button>`;
@@ -827,9 +826,9 @@ function flowPickTheme(){
 function flowThemeChosen(theme){
   const actualTheme = theme==='기타' ? '전체' : theme;
   const pool = actualTheme==='전체' ? COURSES : COURSES.filter(c=>c.themes.includes(actualTheme));
-  document.getElementById('rouletteFlowTitle').textContent=`${theme} — 어느 동네로 갈까요?`;
-  document.getElementById('rouletteFlowBody').innerHTML = `
-    <button class="backLink" onclick="flowPickTheme()">‹ 다른 테마 고르기</button>
+  document.getElementById('homeRouletteBody').innerHTML = `
+    <button class="backLink" style="margin-left:20px;" onclick="flowPickTheme()">‹ 다른 테마 고르기</button>
+    <h3 class="serif" style="font-size:15.5px;margin:4px 20px 6px;">${theme} — 어느 동네로 갈까요?</h3>
     ${flowWheelHTML()}
   `;
   const items = pool.map(c=>({label:c.name, ref:c}));
@@ -854,11 +853,10 @@ function allSpotsIndex(){
   return list;
 }
 function flowPickSpot(){
-  document.getElementById('rouletteFlowTitle').textContent='어디 가고 싶어요?';
-  document.getElementById('rouletteFlowBody').innerHTML = `
-    <button class="backLink" onclick="renderRouletteFlowStart()">‹ 다시 선택</button>
+  document.getElementById('homeRouletteBody').innerHTML = `
+    <h3 class="serif" style="font-size:15.5px;margin:4px 20px 10px;">어디 가고 싶어요?</h3>
     <input id="flowSpotSearch" type="text" placeholder="장소 이름 검색 (예: 리움, 삼청동수제비)"
-      style="width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;font-size:14px;margin-bottom:10px;"
+      style="width:calc(100% - 40px);margin:0 20px 10px;padding:11px;border:1px solid var(--line);border-radius:10px;font-size:14px;"
       oninput="renderFlowSpotResults()">
     <div id="flowSpotResults"></div>
   `;
@@ -873,9 +871,9 @@ function renderFlowSpotResults(){
   wrap.innerHTML = list.map(s=>`<div class="routeCard" onclick="flowSpotChosen('${s.regionId}','${s.name.replace(/'/g,"")}')"><h3>${s.name}</h3><div class="meta">${s.cat} · ${s.regionName}</div></div>`).join('');
 }
 function flowSpotChosen(regionId, name){
-  document.getElementById('rouletteFlowTitle').textContent=`${name} — 오늘 테마는?`;
-  document.getElementById('rouletteFlowBody').innerHTML = `
-    <button class="backLink" onclick="flowPickSpot()">‹ 다른 장소 고르기</button>
+  document.getElementById('homeRouletteBody').innerHTML = `
+    <button class="backLink" style="margin-left:20px;" onclick="flowPickSpot()">‹ 다른 장소 고르기</button>
+    <h3 class="serif" style="font-size:15.5px;margin:4px 20px 6px;">${name} — 오늘 테마는?</h3>
     ${flowWheelHTML()}
   `;
   const items = THEMES.filter(t=>t!=='전체').map(t=>({label:t}));
@@ -931,7 +929,7 @@ function resetMapView(){
   kakaoMap.setLevel(8);
   kakaoMap.setCenter(new kakao.maps.LatLng(37.5665,126.9780));
 }
-function rouletteColors(){ return ['#A23E2C','#3F5B4E','#B8863A','#6B4A63','#2E6B6B']; }
+function rouletteColors(){ return ['#E4572E','#17BEBB','#FFC914','#7A5195','#2E933C','#EF6BAA','#3F88C5','#F2A541']; }
 function roulettePool(){
   const base = currentArea.spots.filter(s=>!['시작점','종료점','이동'].includes(s.cat));
   const names = new Set(base.map(s=>s.name));
@@ -964,7 +962,7 @@ function renderAreaRouteList(){
         <div class="rouletteHub">🎯</div>
       </div>
       <div class="rouletteLegend">${legend}</div>
-      <button class="btn" style="background:var(--gold);" onclick="spinRoulette()">룰렛 돌리기</button>
+      <button class="btn spinBtn" style="background:var(--gold);" onclick="spinRoulette()">🎯 룰렛 돌리기</button>
     </div>
   `;
 }

@@ -127,6 +127,41 @@ button{font-family:inherit;}
 .menuTile .sub{font-size:11px; color:var(--muted);}
 .homeDivider{margin:6px 20px 0; border:none; border-top:1px solid var(--line);}
 .homeFoot{padding:18px 20px 32px; font-size:12px; color:var(--muted); text-align:center;}
+.choiceRow{display:flex; gap:12px; padding:4px 20px 22px;}
+.choiceCard{
+  flex:1; background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:20px 14px; text-align:center; cursor:pointer; box-shadow:var(--shadow);
+}
+.choiceCard:active{transform:scale(.97);}
+.choiceCard .ic{font-size:30px; display:block; margin-bottom:8px;}
+.choiceCard .lb{font-size:14.5px; font-weight:700;}
+.choiceCard .sub{font-size:11px; color:var(--muted); margin-top:3px;}
+.homeThemeGrid{display:none;}
+.homeThemeGrid.show{display:block;}
+.homeThemeGrid .backLink{padding:0 20px 10px; display:block;}
+
+/* ---------- 룰렛 ---------- */
+.rouletteWrap{padding:18px 0 6px; text-align:center;}
+.rouletteWrap h3{font-size:13px; color:var(--muted); font-weight:700; margin:0 0 14px;}
+.rouletteStage{position:relative; width:200px; height:200px; margin:0 auto 14px;}
+.roulettePointer{
+  position:absolute; top:-4px; left:50%; transform:translateX(-50%);
+  width:0; height:0; border-left:9px solid transparent; border-right:9px solid transparent;
+  border-top:16px solid var(--ink); z-index:2;
+}
+.rouletteWheel{
+  width:200px; height:200px; border-radius:50%; border:4px solid #fff;
+  box-shadow:0 2px 4px rgba(0,0,0,.1), 0 10px 24px rgba(28,27,24,.18);
+  transform:rotate(0deg);
+}
+.rouletteHub{
+  position:absolute; top:50%; left:50%; width:34px; height:34px; margin:-17px 0 0 -17px;
+  background:#fff; border-radius:50%; box-shadow:0 1px 4px rgba(0,0,0,.2);
+  display:flex; align-items:center; justify-content:center; font-size:15px; z-index:2;
+}
+.rouletteLegend{display:flex; flex-wrap:wrap; gap:6px 10px; justify-content:center; padding:0 16px 14px;}
+.legendItem{display:flex; align-items:center; gap:5px; font-size:11px; color:#4A473F;}
+.legendItem i{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;}
 
 /* ---------- 지도 ---------- */
 #tab-map{height:100%;}
@@ -211,13 +246,24 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
     <!-- 홈 탭 -->
     <div class="tabcontent" id="tab-home">
       <div class="homeHero">
-        <p class="eyebrow">SEOUL TOUR</p>
-        <h1 class="serif">오늘, 뭘 할까요?</h1>
-        <p>끌리는 테마를 고르면 어울리는 동네와 동선을 보여드려요</p>
+        <p class="eyebrow">TODAY'S SEOUL</p>
+        <h1 class="serif">오늘 어디 갈까?</h1>
+        <p>둘러볼까요, 룰렛에 맡길까요</p>
       </div>
-      <div class="menuBoard" id="homeMenuBoard"></div>
+      <div class="choiceRow">
+        <button class="choiceCard" onclick="goToRecommend()">
+          <span class="ic">📋</span>
+          <span class="lb">추천 코스 가기</span>
+          <span class="sub">14개 동네 · 8개 테마 둘러보기</span>
+        </button>
+        <button class="choiceCard" onclick="openRouletteFlow()">
+          <span class="ic">🎯</span>
+          <span class="lb">룰렛 돌리기</span>
+          <span class="sub">뭘 정했는지 알려주면 나머진 룰렛이</span>
+        </button>
+      </div>
       <hr class="homeDivider">
-      <div class="homeFoot">테마를 못 정했다면 동네투어 탭에서 전체를 둘러보세요</div>
+      <div class="homeFoot">언제든 아래 탭에서 다시 여기로 돌아올 수 있어요</div>
     </div>
 
     <!-- 지도 탭 -->
@@ -291,6 +337,15 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
   <div class="detailBody" id="placeDetailBody"></div>
 </div>
 
+<!-- ============ 룰렛 흐름 오버레이 ============ -->
+<div class="detailOverlay" id="rouletteFlowOverlay">
+  <div class="detailHead">
+    <button onclick="closeDetail('rouletteFlowOverlay')">←</button>
+    <h2 id="rouletteFlowTitle">뭘 정했나요?</h2>
+  </div>
+  <div class="detailBody" id="rouletteFlowBody"></div>
+</div>
+
 <!-- ============ 장소 추가 바텀시트 ============ -->
 <div class="overlay" id="addPlaceOverlay">
   <div class="sheet" style="position:relative;">
@@ -323,6 +378,8 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
         <option value="와인">와인</option>
         <option value="기타">기타</option>
       </select>
+      <label style="font-size:12.5px;color:var(--muted);">어느 동네투어 권역인가요? (룰렛에 포함돼요)</label>
+      <select id="pickCategoryRegion"><option value="">선택 안 함</option></select>
       <textarea id="pickCategoryMemo" placeholder="메모 (추천메뉴, 느낌 등 — 선택)"></textarea>
       <button class="btn" onclick="confirmAddPlace()">버킷리스트에 저장</button>
     </div>
@@ -652,17 +709,172 @@ const THEME_META = {
 };
 let activeTheme='전체';
 
-function renderHomeMenu(){
-  const wrap=document.getElementById('homeMenuBoard'); if(!wrap) return; wrap.innerHTML='';
-  THEMES.filter(t=>t!=='전체').forEach(t=>{
-    const meta=THEME_META[t]||{icon:'📍',color:'var(--muted)',sub:''};
-    const tile=document.createElement('button');
-    tile.className='menuTile';
-    tile.innerHTML=`<span class="dot" style="background:${meta.color}"></span><span class="ic">${meta.icon}</span><span class="lb">${t}</span><span class="sub">${meta.sub}</span>`;
-    tile.onclick=()=>{ activeTheme = (t==='기타') ? '전체' : t; switchTab('course'); renderThemeChips(); renderCourseList(); };
-    wrap.appendChild(tile);
-  });
+function goToRecommend(){
+  activeTheme='전체';
+  switchTab('course'); renderThemeChips(); renderCourseList();
 }
+
+/* =====================================================================
+   룰렛 흐름: 지역별 / 테마별 / 장소별 우선선택 → 룰렛 → 동네 상세
+===================================================================== */
+function openRouletteFlow(){
+  document.getElementById('rouletteFlowOverlay').classList.add('show');
+  renderRouletteFlowStart();
+}
+function renderRouletteFlowStart(){
+  document.getElementById('rouletteFlowTitle').textContent='뭘 정했나요?';
+  document.getElementById('rouletteFlowBody').innerHTML = `
+    <p style="font-size:13px;color:var(--muted);margin:0 0 16px;">이미 정한 게 있으면 먼저 골라주세요 — 나머진 룰렛이 정해드려요</p>
+    <div class="routeCard" onclick="flowPickRegion()"><h3>🏘️ 지역별</h3><div class="meta">동네는 정했고, 오늘 뭘 할지는 룰렛으로</div></div>
+    <div class="routeCard" onclick="flowPickTheme()"><h3>🎭 테마별</h3><div class="meta">뭘 할지는 정했고, 동네는 룰렛으로</div></div>
+    <div class="routeCard" onclick="flowPickSpot()"><h3>📍 장소별</h3><div class="meta">가고 싶은 곳은 정했고, 오늘 테마는 룰렛으로</div></div>
+  `;
+}
+function flowWheelHTML(){
+  return `<div class="rouletteWrap">
+    <div class="rouletteStage">
+      <div class="roulettePointer"></div>
+      <div class="rouletteWheel" id="flowWheel"></div>
+      <div class="rouletteHub">🎯</div>
+    </div>
+    <div class="rouletteLegend" id="flowLegend"></div>
+    <button class="btn" style="background:var(--gold); max-width:280px; margin:4px auto 0;" onclick="spinFlowWheel()">룰렛 돌리기</button>
+  </div>`;
+}
+let flowPool=[], flowRotation=0, flowSpinning=false, flowOnLand=null;
+function setupFlowWheel(pool, onLand){
+  flowPool=pool; flowRotation=0; flowSpinning=false; flowOnLand=onLand;
+  renderFlowWheelVisual();
+}
+function renderFlowWheelVisual(){
+  const wheel=document.getElementById('flowWheel'); const legend=document.getElementById('flowLegend');
+  if(!wheel) return;
+  const n=flowPool.length;
+  if(!n){ wheel.style.background='var(--line)'; legend.innerHTML='<span class="legendItem">선택지가 없어요</span>'; return; }
+  const seg=360/n, colors=rouletteColors();
+  wheel.style.transition='none';
+  wheel.style.background = `conic-gradient(${flowPool.map((p,i)=>`${colors[i%colors.length]} ${i*seg}deg ${(i+1)*seg}deg`).join(',')})`;
+  wheel.style.transform = `rotate(${flowRotation}deg)`;
+  legend.innerHTML = flowPool.map((p,i)=>`<span class="legendItem"><i style="background:${colors[i%colors.length]}"></i>${i+1}. ${p.label}</span>`).join('');
+}
+function spinFlowWheel(){
+  if(flowSpinning || !flowPool.length) return; flowSpinning=true;
+  const n=flowPool.length, seg=360/n;
+  const extraSpins=4+Math.floor(Math.random()*3), offset=Math.random()*360;
+  flowRotation += extraSpins*360+offset;
+  const wheel=document.getElementById('flowWheel');
+  wheel.style.transition='transform 3.2s cubic-bezier(.15,.65,.1,1)';
+  wheel.style.transform=`rotate(${flowRotation}deg)`;
+  setTimeout(()=>{
+    flowSpinning=false;
+    const effective=((360-(flowRotation%360))+360)%360;
+    const winIndex=Math.floor(effective/seg)%n;
+    const winner=flowPool[winIndex];
+    if(flowOnLand) flowOnLand(winner);
+  }, 3300);
+}
+function finishFlowToArea(regionId, themeLabel){
+  document.getElementById('rouletteFlowBody').innerHTML = `
+    <div style="text-align:center;padding:50px 10px;">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">오늘의 테마</p>
+      <h2 class="serif" style="font-size:23px;">${themeLabel}</h2>
+    </div>
+  `;
+  setTimeout(()=>{
+    closeDetail('rouletteFlowOverlay');
+    switchTab('course');
+    openAreaDetail(regionId);
+  }, 900);
+}
+
+/* ---- 지역별: 동네를 직접 고르고 → 테마 룰렛 ---- */
+function flowPickRegion(){
+  document.getElementById('rouletteFlowTitle').textContent='어느 동네로 갈까요?';
+  document.getElementById('rouletteFlowBody').innerHTML = `
+    <button class="backLink" onclick="renderRouletteFlowStart()">‹ 다시 선택</button>
+    ${COURSES.map(c=>`<div class="routeCard" onclick="flowRegionChosen('${c.id}')"><h3>${c.name}</h3><div class="meta">${c.area} · ${c.themes.join(', ')}</div></div>`).join('')}
+  `;
+}
+function flowRegionChosen(id){
+  const area = COURSES.find(c=>c.id===id); if(!area) return;
+  document.getElementById('rouletteFlowTitle').textContent=`${area.name}에서 뭘 할까요?`;
+  document.getElementById('rouletteFlowBody').innerHTML = `
+    <button class="backLink" onclick="flowPickRegion()">‹ 다른 동네 고르기</button>
+    ${flowWheelHTML()}
+  `;
+  const items = THEMES.filter(t=>t!=='전체').map(t=>({label:t}));
+  setupFlowWheel(items, (winner)=> finishFlowToArea(area.id, winner.label));
+}
+
+/* ---- 테마별: 테마를 직접 고르고 → 동네 룰렛 ---- */
+function flowPickTheme(){
+  document.getElementById('rouletteFlowTitle').textContent='오늘 뭐 하고 싶어요?';
+  document.getElementById('rouletteFlowBody').innerHTML = `
+    <button class="backLink" onclick="renderRouletteFlowStart()">‹ 다시 선택</button>
+    <div class="menuBoard">${THEMES.filter(t=>t!=='전체').map(t=>{
+      const meta=THEME_META[t]||{icon:'📍',color:'var(--muted)',sub:''};
+      return `<button class="menuTile" onclick="flowThemeChosen('${t}')"><span class="dot" style="background:${meta.color}"></span><span class="ic">${meta.icon}</span><span class="lb">${t}</span><span class="sub">${meta.sub}</span></button>`;
+    }).join('')}</div>
+  `;
+}
+function flowThemeChosen(theme){
+  const actualTheme = theme==='기타' ? '전체' : theme;
+  const pool = actualTheme==='전체' ? COURSES : COURSES.filter(c=>c.themes.includes(actualTheme));
+  document.getElementById('rouletteFlowTitle').textContent=`${theme} — 어느 동네로 갈까요?`;
+  document.getElementById('rouletteFlowBody').innerHTML = `
+    <button class="backLink" onclick="flowPickTheme()">‹ 다른 테마 고르기</button>
+    ${flowWheelHTML()}
+  `;
+  const items = pool.map(c=>({label:c.name, ref:c}));
+  setupFlowWheel(items, (winner)=> finishFlowToArea(winner.ref.id, theme));
+}
+
+/* ---- 장소별: 가고 싶은 곳을 검색해 고르고 → 테마 룰렛 ---- */
+function allSpotsIndex(){
+  const list=[]; const seen=new Set();
+  COURSES.forEach(c=>{
+    c.spots.forEach(s=>{
+      if(['시작점','종료점','이동'].includes(s.cat)) return;
+      if(seen.has(s.name)) return; seen.add(s.name);
+      list.push({name:s.name, cat:s.cat, regionId:c.id, regionName:c.name});
+    });
+  });
+  FOOD_REF.forEach(f=>{
+    if(seen.has(f.name)) return; seen.add(f.name);
+    const region = COURSES.find(c=>c.id===f.regionId);
+    list.push({name:f.name, cat:f.cat, regionId:f.regionId, regionName: region?region.name:''});
+  });
+  return list;
+}
+function flowPickSpot(){
+  document.getElementById('rouletteFlowTitle').textContent='어디 가고 싶어요?';
+  document.getElementById('rouletteFlowBody').innerHTML = `
+    <button class="backLink" onclick="renderRouletteFlowStart()">‹ 다시 선택</button>
+    <input id="flowSpotSearch" type="text" placeholder="장소 이름 검색 (예: 리움, 삼청동수제비)"
+      style="width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;font-size:14px;margin-bottom:10px;"
+      oninput="renderFlowSpotResults()">
+    <div id="flowSpotResults"></div>
+  `;
+  renderFlowSpotResults();
+}
+function renderFlowSpotResults(){
+  const q=(document.getElementById('flowSpotSearch').value||'').trim();
+  const all=allSpotsIndex();
+  const list = q ? all.filter(s=>s.name.includes(q)) : all.slice(0,20);
+  const wrap=document.getElementById('flowSpotResults');
+  if(!list.length){ wrap.innerHTML='<div class="empty">일치하는 장소가 없어요.</div>'; return; }
+  wrap.innerHTML = list.map(s=>`<div class="routeCard" onclick="flowSpotChosen('${s.regionId}','${s.name.replace(/'/g,"")}')"><h3>${s.name}</h3><div class="meta">${s.cat} · ${s.regionName}</div></div>`).join('');
+}
+function flowSpotChosen(regionId, name){
+  document.getElementById('rouletteFlowTitle').textContent=`${name} — 오늘 테마는?`;
+  document.getElementById('rouletteFlowBody').innerHTML = `
+    <button class="backLink" onclick="flowPickSpot()">‹ 다른 장소 고르기</button>
+    ${flowWheelHTML()}
+  `;
+  const items = THEMES.filter(t=>t!=='전체').map(t=>({label:t}));
+  setupFlowWheel(items, (winner)=> finishFlowToArea(regionId, winner.label));
+}
+
 function renderThemeChips(){
   const wrap=document.getElementById('themeChips'); wrap.innerHTML='';
   THEMES.forEach(t=>{
@@ -691,19 +903,47 @@ function renderCourseList(){
   });
 }
 
-/* ---- 지역 상세: 추천 코스 목록 + 랜덤 코스 ---- */
-let currentArea=null;
+/* ---- 지역 상세: 추천 코스 목록 + 룰렛 ---- */
+let currentArea=null, rouletteRotation=0, rouletteSpinning=false;
 function openAreaDetail(id){
   currentArea = COURSES.find(x=>x.id===id); if(!currentArea) return;
+  rouletteRotation=0; rouletteSpinning=false;
   document.getElementById('courseDetailTitle').textContent = currentArea.name;
   renderAreaRouteList();
   document.getElementById('courseDetail').classList.add('show');
+  const backBtn = document.querySelector('#courseDetail .detailHead button');
+  if(backBtn) backBtn.onclick = ()=> closeDetail('courseDetail');
+}
+function focusAreaOnMap(course){
+  if(kakaoMap){
+    kakaoMap.setLevel(4);
+    kakaoMap.setCenter(new kakao.maps.LatLng(course.coord.lat, course.coord.lng));
+  }
+  openAreaDetail(course.id);
+  const backBtn = document.querySelector('#courseDetail .detailHead button');
+  if(backBtn) backBtn.onclick = ()=>{ closeDetail('courseDetail'); resetMapView(); };
+}
+function resetMapView(){
+  if(!kakaoMap) return;
+  kakaoMap.setLevel(8);
+  kakaoMap.setCenter(new kakao.maps.LatLng(37.5665,126.9780));
+}
+function rouletteColors(){ return ['#A23E2C','#3F5B4E','#B8863A','#6B4A63','#2E6B6B']; }
+function roulettePool(){
+  const base = currentArea.spots.filter(s=>!['시작점','종료점','이동'].includes(s.cat));
+  const names = new Set(base.map(s=>s.name));
+  const extra = [];
+  FOOD_REF.filter(f=>f.regionId===currentArea.id && !names.has(f.name)).forEach(f=>{ extra.push(f); names.add(f.name); });
+  bucketPlaces.filter(p=>p.regionId===currentArea.id && !names.has(p.name)).forEach(p=>{ extra.push(p); names.add(p.name); });
+  return base.concat(extra);
 }
 function renderAreaRouteList(){
   const c=currentArea; const body=document.getElementById('courseDetailBody');
+  const pool=roulettePool(); const n=pool.length; const seg=360/n; const colors=rouletteColors();
+  const gradient = pool.map((s,i)=>`${colors[i%colors.length]} ${i*seg}deg ${(i+1)*seg}deg`).join(',');
+  const legend = pool.map((s,i)=>`<span class="legendItem"><i style="background:${colors[i%colors.length]}"></i>${i+1}. ${s.name}</span>`).join('');
   body.innerHTML = `
     <div class="tagrow" style="margin-bottom:16px;">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
-    <button class="btn" style="background:var(--gold);margin-bottom:18px;" onclick="renderRandomRoute()">🎲 오늘의 랜덤 코스</button>
     <h3 style="font-size:13px;color:var(--muted);margin:0 0 10px;font-weight:700;">추천 코스 · 반나절용으로 나눴어요</h3>
     ${c.routes.map((r,i)=>{
       const spots=c.spots.slice(r.range[0], r.range[1]);
@@ -713,6 +953,16 @@ function renderAreaRouteList(){
         <div class="desc">${spots.map(s=>s.name).join(' → ')}</div>
       </div>`;
     }).join('')}
+    <div class="rouletteWrap">
+      <h3>🎡 룰렛으로 오늘의 코스 뽑기 — ${c.name} 안 맛집·버킷리스트까지 포함해서 ${n}곳 중에서 돌아가요</h3>
+      <div class="rouletteStage">
+        <div class="roulettePointer"></div>
+        <div class="rouletteWheel" id="rouletteWheel" style="background:conic-gradient(${gradient}); transform:rotate(${rouletteRotation}deg);"></div>
+        <div class="rouletteHub">🎯</div>
+      </div>
+      <div class="rouletteLegend">${legend}</div>
+      <button class="btn" style="background:var(--gold);" onclick="spinRoulette()">룰렛 돌리기</button>
+    </div>
   `;
 }
 function renderRouteSteps(routeIdx){
@@ -720,14 +970,27 @@ function renderRouteSteps(routeIdx){
   const spots=c.spots.slice(r.range[0], r.range[1]);
   renderSteps(r.name, spots, false);
 }
-function renderRandomRoute(){
-  const c=currentArea;
-  const pool=c.spots.filter(s=>!['시작점','종료점','이동'].includes(s.cat));
-  const n=Math.min(5, pool.length);
-  const shuffled=[...pool].sort(()=>Math.random()-0.5).slice(0,n);
-  renderSteps('오늘의 랜덤 코스', shuffled, true);
+function spinRoulette(){
+  if(rouletteSpinning) return; rouletteSpinning=true;
+  const pool=roulettePool(); const n=pool.length; const seg=360/n;
+  const extraSpins = 4 + Math.floor(Math.random()*3);
+  const offset = Math.random()*360;
+  rouletteRotation += extraSpins*360 + offset;
+  const wheel=document.getElementById('rouletteWheel');
+  wheel.style.transition='transform 3.2s cubic-bezier(.15,.65,.1,1)';
+  wheel.style.transform=`rotate(${rouletteRotation}deg)`;
+  setTimeout(()=>{
+    rouletteSpinning=false;
+    const effective = ((360 - (rouletteRotation % 360)) + 360) % 360;
+    const winIndex = Math.floor(effective/seg) % n;
+    const routeLen = Math.min(5, n);
+    const picked=[]; for(let k=0;k<routeLen;k++){ picked.push(pool[(winIndex+k)%n]); }
+    renderSteps('🎡 룰렛 코스', picked, true);
+  }, 3300);
 }
+let __stepsSpots=[];
 function renderSteps(title, spots, isRandom){
+  __stepsSpots = spots;
   const body=document.getElementById('courseDetailBody');
   body.innerHTML = `
     <button class="backLink" onclick="renderAreaRouteList()">‹ ${currentArea.name} 코스 목록으로</button>
@@ -739,12 +1002,21 @@ function renderSteps(title, spots, isRandom){
           <h4>${s.name}</h4>
           <div class="cat">${s.cat}</div>
           ${s.note?`<div class="note">${s.note}</div>`:''}
+          <button class="smallBtn" style="margin-top:6px;" onclick="spotRouteClick(${i})">📍 길찾기</button>
         </div>
       </div>
       ${s.walk?`<div class="walkNote">도보 ${s.walk}</div>`:''}
     `).join('')}
-    ${isRandom?`<button class="btn secondary" style="margin-top:16px;" onclick="renderRandomRoute()">🔀 다시 뽑기</button>`:''}
+    ${isRandom?`<button class="btn secondary" style="margin-top:16px;" onclick="renderAreaRouteList()">🎡 룰렛 다시 돌리기</button>`:''}
   `;
+}
+async function spotRouteClick(i){
+  const s=__stepsSpots[i]; if(!s) return;
+  if(!s.lat){
+    const found = await geocodeSpot(s, currentArea ? currentArea.name : '서울');
+    if(!found){ alert('위치를 찾지 못했어요. 지도 탭을 한번 연 뒤 다시 시도해주세요.'); return; }
+  }
+  openRouteSheetTo(s.lat, s.lng, s.name);
 }
 function closeDetail(id){ document.getElementById(id).classList.remove('show'); }
 
@@ -752,32 +1024,32 @@ function closeDetail(id){ document.getElementById(id).classList.remove('show'); 
    맛집·와인 — 참조리스트(curated) + 버킷리스트(Firestore)
 ===================================================================== */
 const FOOD_REF = [
- {name:'삼청동수제비', cat:'한식', area:'삼청동', note:'1982년부터, 수제비·감자전 노포'},
- {name:'서울서 둘째로 잘하는 집', cat:'카페', area:'삼청동', note:'단팥죽·수정과'},
- {name:'카페3청', cat:'카페', area:'삼청동', note:'간판 없는 개인카페'},
- {name:'마하 한남', cat:'카페', area:'한남동', note:'골목 안 빈티지, 한강뷰 테라스'},
- {name:'라라브레드 한남점', cat:'카페', area:'한남동', note:'골목 안 숨은 디저트카페'},
- {name:'히든배럴 한남', cat:'와인', area:'한남동', note:'지하, 숨은 와이너리 컨셉'},
- {name:'방태막국수', cat:'분식', area:'인사동', note:'막국수+감자전+굴림만두'},
- {name:'인사동촌', cat:'한식', area:'인사동', note:'남촌·북촌·서촌 정식'},
- {name:'부암동 돈가스집 1979', cat:'한식', area:'부암동', note:'환기미술관 바로 아래'},
- {name:'내추럴 와인바 야드', cat:'와인', area:'부암동', note:'환기미술관 바로 옆'},
- {name:'부암동 스코프', cat:'카페', area:'부암동', note:'영국식 베이커리'},
- {name:'오모리찌개집', cat:'한식', area:'잠실', note:'잠실 토박이 노포, 3년숙성 김치찌개'},
- {name:'카페 이클립스', cat:'카페', area:'잠실', note:'석촌호수 테라스뷰'},
- {name:'목란', cat:'중식', area:'연희동', note:'이연복 셰프, 예약 필수'},
- {name:'콘하스', cat:'카페', area:'연희동', note:'컨테이너 인테리어'},
- {name:'새들러하우스', cat:'카페', area:'신사동', note:'가죽공방 겸 카페'},
- {name:'둘세이수와베', cat:'와인', area:'신사동', note:'가로수길 안쪽 조용한 와인바'},
- {name:'커피루소 정동', cat:'카페', area:'정동', note:'브런치·원두 판매'},
- {name:'남대문시장 갈치조림골목', cat:'한식', area:'남대문', note:'남대문 명물'},
- {name:'더하우스1932', cat:'카페', area:'만리동', note:'서울역 뒷동네 이색카페'},
- {name:'로우키 성수', cat:'카페', area:'성수동', note:'성수 대표 스페셜티커피'},
- {name:'리타르단도', cat:'와인', area:'성수동', note:'간판 없는 지하 숨은 와인바'},
- {name:'더젤(THE JELL)', cat:'와인', area:'이태원', note:'24년 역사, 1세대 와인샵'},
- {name:'강남 진해장', cat:'한식', area:'강남역', note:'현지인 내장탕 노포'},
- {name:'골목집', cat:'한식', area:'강남역', note:'막걸리·김치전'},
- {name:'옥경이네 건생선', cat:'기타', area:'신당동', note:'서울중앙시장 대표 건어물'},
+ {name:'삼청동수제비', cat:'한식', area:'삼청동', regionId:'samcheong-bukchon', note:'1982년부터, 수제비·감자전 노포'},
+ {name:'서울서 둘째로 잘하는 집', cat:'카페', area:'삼청동', regionId:'samcheong-bukchon', note:'단팥죽·수정과'},
+ {name:'카페3청', cat:'카페', area:'삼청동', regionId:'samcheong-bukchon', note:'간판 없는 개인카페'},
+ {name:'마하 한남', cat:'카페', area:'한남동', regionId:'hannam', note:'골목 안 빈티지, 한강뷰 테라스'},
+ {name:'라라브레드 한남점', cat:'카페', area:'한남동', regionId:'hannam', note:'골목 안 숨은 디저트카페'},
+ {name:'히든배럴 한남', cat:'와인', area:'한남동', regionId:'hannam', note:'지하, 숨은 와이너리 컨셉'},
+ {name:'방태막국수', cat:'분식', area:'인사동', regionId:'insadong', note:'막국수+감자전+굴림만두'},
+ {name:'인사동촌', cat:'한식', area:'인사동', regionId:'insadong', note:'남촌·북촌·서촌 정식'},
+ {name:'부암동 돈가스집 1979', cat:'한식', area:'부암동', regionId:'pyeongchang-buam', note:'환기미술관 바로 아래'},
+ {name:'내추럴 와인바 야드', cat:'와인', area:'부암동', regionId:'pyeongchang-buam', note:'환기미술관 바로 옆'},
+ {name:'부암동 스코프', cat:'카페', area:'부암동', regionId:'pyeongchang-buam', note:'영국식 베이커리'},
+ {name:'오모리찌개집', cat:'한식', area:'잠실', regionId:'jamsil', note:'잠실 토박이 노포, 3년숙성 김치찌개'},
+ {name:'카페 이클립스', cat:'카페', area:'잠실', regionId:'jamsil', note:'석촌호수 테라스뷰'},
+ {name:'목란', cat:'중식', area:'연희동', regionId:'seodaemun', note:'이연복 셰프, 예약 필수'},
+ {name:'콘하스', cat:'카페', area:'연희동', regionId:'seodaemun', note:'컨테이너 인테리어'},
+ {name:'새들러하우스', cat:'카페', area:'신사동', regionId:'sinsa-dosan', note:'가죽공방 겸 카페'},
+ {name:'둘세이수와베', cat:'와인', area:'신사동', regionId:'sinsa-dosan', note:'가로수길 안쪽 조용한 와인바'},
+ {name:'커피루소 정동', cat:'카페', area:'정동', regionId:'downtown', note:'브런치·원두 판매'},
+ {name:'남대문시장 갈치조림골목', cat:'한식', area:'남대문', regionId:'downtown', note:'남대문 명물'},
+ {name:'더하우스1932', cat:'카페', area:'만리동', regionId:'downtown', note:'서울역 뒷동네 이색카페'},
+ {name:'로우키 성수', cat:'카페', area:'성수동', regionId:'seongsu', note:'성수 대표 스페셜티커피'},
+ {name:'리타르단도', cat:'와인', area:'성수동', regionId:'seongsu', note:'간판 없는 지하 숨은 와인바'},
+ {name:'더젤(THE JELL)', cat:'와인', area:'이태원', regionId:'itaewon', note:'24년 역사, 1세대 와인샵'},
+ {name:'강남 진해장', cat:'한식', area:'강남역', regionId:'gangnam-station', note:'현지인 내장탕 노포'},
+ {name:'골목집', cat:'한식', area:'강남역', regionId:'gangnam-station', note:'막걸리·김치전'},
+ {name:'옥경이네 건생선', cat:'기타', area:'신당동', regionId:'ddp-market', note:'서울중앙시장 대표 건어물'},
 ];
 const FOOD_CATS = ['전체','한식','분식','양식','일식','중식','카페','와인','기타'];
 let foodSource='curated', activeFoodCat='전체';
@@ -869,21 +1141,27 @@ function searchPlaceForAdd(){
         closeSheet('addPlaceOverlay');
         document.getElementById('pickCategoryPlaceName').textContent = pendingPlace.name;
         document.getElementById('pickCategoryMemo').value='';
+        populateRegionSelect();
         document.getElementById('pickCategoryOverlay').classList.add('show');
       };
       wrap.appendChild(row);
     }, {size:8});
   });
 }
+function populateRegionSelect(){
+  const sel=document.getElementById('pickCategoryRegion');
+  sel.innerHTML='<option value="">선택 안 함</option>' + COURSES.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+}
 async function confirmAddPlace(){
   if(!pendingPlace || !currentUser) return;
   const cat = document.getElementById('pickCategorySelect').value;
   const memo = document.getElementById('pickCategoryMemo').value.trim();
+  const regionId = document.getElementById('pickCategoryRegion').value;
   try{
     await db.collection('seoul_places').add({
       name: pendingPlace.name, address: pendingPlace.address,
       lat: pendingPlace.lat, lng: pendingPlace.lng,
-      cat, memo, status:'가고싶어요',
+      cat, memo, regionId, status:'가고싶어요',
       addedBy: myNickname, createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     closeSheet('pickCategoryOverlay');
@@ -1043,13 +1321,33 @@ function renderMapFilterChips(){
     wrap.appendChild(b);
   });
 }
+function initKakaoServices(){
+  if(!window.kakao || !window.kakao.maps) return;
+  kakao.maps.load(()=>{
+    if(!kakaoPlacesService) kakaoPlacesService = new kakao.maps.services.Places();
+  });
+}
+function geocodeSpot(spot, contextName){
+  return new Promise((resolve)=>{
+    if(spot.lat){ resolve(spot); return; }
+    if(!kakaoPlacesService){ resolve(null); return; }
+    kakaoPlacesService.keywordSearch(`${contextName||''} ${spot.name}`.trim(), (data,status)=>{
+      if(status===kakao.maps.services.Status.OK && data.length){
+        spot.lat=parseFloat(data[0].y); spot.lng=parseFloat(data[0].x);
+        resolve(spot);
+      } else resolve(null);
+    });
+  });
+}
 let mapMarkers=[];
 function ensureKakaoMap(){
-  if(kakaoMap || !window.kakao || !window.kakao.maps) return;
+  if(!window.kakao || !window.kakao.maps) return;
   kakao.maps.load(()=>{
-    const container = document.getElementById('kakaoMap');
-    kakaoMap = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(37.5665,126.9780), level:8 });
-    kakaoPlacesService = new kakao.maps.services.Places();
+    if(!kakaoPlacesService) kakaoPlacesService = new kakao.maps.services.Places();
+    if(!kakaoMap){
+      const container = document.getElementById('kakaoMap');
+      kakaoMap = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(37.5665,126.9780), level:8 });
+    }
     renderMapMarkers();
   });
 }
@@ -1064,10 +1362,16 @@ function renderMapMarkers(){
     mapMarkers.push(marker);
   };
   if(activeMapCat==='전체' || activeMapCat==='동네투어'){
-    COURSES.forEach(c=> addMarker(c.coord.lat, c.coord.lng, c.name, '🏘️'));
+    COURSES.forEach(c=>{
+      const pos = new kakao.maps.LatLng(c.coord.lat, c.coord.lng);
+      const marker = new kakao.maps.Marker({position:pos, map:kakaoMap});
+      kakao.maps.event.addListener(marker,'click',()=> focusAreaOnMap(c));
+      mapMarkers.push(marker);
+    });
   }
   if(activeMapCat==='전체' || activeMapCat==='맛집·와인'){
     bucketPlaces.forEach(p=>{ if(p.lat) addMarker(p.lat, p.lng, p.name, p.cat==='와인'?'🍷':'🍽️'); });
+    FOOD_REF.forEach(p=>{ if(p.lat) addMarker(p.lat, p.lng, p.name, p.cat==='와인'?'🍷':'🍽️'); });
   }
   if(activeMapCat==='전체' || activeMapCat==='즐겨찾기'){
     favorites.forEach(f=> addMarker(f.lat, f.lng, f.name, '⭐'));
@@ -1078,7 +1382,7 @@ function renderMapMarkers(){
    초기화
 ===================================================================== */
 function initAppData(){
-  renderHomeMenu();
+  initKakaoServices();
   renderThemeChips(); renderCourseList();
   renderFoodCatChips(); renderFoodList();
   loadBucketPlaces();

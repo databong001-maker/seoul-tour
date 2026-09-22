@@ -18,8 +18,11 @@
   --brand:#A23E2C;      /* 단청 붉은빛 */
   --brand2:#3F5B4E;     /* 청자빛 초록 */
   --gold:#B8863A;       /* 단청 황토 */
+  --plum:#6B4A63;       /* 자수정빛 */
+  --teal:#2E6B6B;       /* 심연 청록 */
   --muted:#8B8478; --line:#E1D9C7; --danger:#B23A2E;
-  --radius:14px;
+  --radius:16px;
+  --shadow:0 1px 2px rgba(28,27,24,.04), 0 6px 16px rgba(28,27,24,.06);
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;height:100%;}
@@ -85,21 +88,45 @@ button{font-family:inherit;}
 .section h2{font-size:16px; margin:4px 0 10px;}
 .chiprow{display:flex; gap:7px; overflow-x:auto; padding:2px 16px 12px; -webkit-overflow-scrolling:touch;}
 .chip{
-  flex-shrink:0; padding:7px 13px; border-radius:999px; border:1px solid var(--line);
-  background:#fff; font-size:12.5px; color:var(--muted); cursor:pointer; white-space:nowrap;
+  flex-shrink:0; padding:7px 14px; border-radius:999px; border:1px solid var(--line);
+  background:#fff; font-size:12.5px; color:#5C574C; cursor:pointer; white-space:nowrap;
+  font-weight:500; transition:background .15s,color .15s,border-color .15s;
 }
-.chip.active{background:var(--brand); border-color:var(--brand); color:#fff;}
+.chip.active{background:var(--ink); border-color:var(--ink); color:#fff;}
 .card{
   background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-  padding:14px; margin:0 16px 12px;
+  padding:16px; margin:0 16px 12px; box-shadow:var(--shadow);
+  transition:transform .12s;
 }
-.card h3{font-size:15px; margin:0 0 4px;}
-.card .meta{font-size:12px; color:var(--muted); margin-bottom:6px;}
-.card .desc{font-size:13px; color:#4A473F; line-height:1.5;}
-.tagrow{display:flex; gap:5px; flex-wrap:wrap; margin-top:8px;}
-.tag{font-size:11px; padding:3px 8px; border-radius:6px; background:#F1ECDF; color:var(--brand2); font-weight:500;}
+.card:active{transform:scale(.98);}
+.card h3{font-size:15.5px; margin:0 0 4px; letter-spacing:-.1px;}
+.card .meta{font-size:11.5px; color:var(--muted); margin-bottom:7px; letter-spacing:.1px;}
+.card .desc{font-size:13px; color:#4A473F; line-height:1.55;}
+.tagrow{display:flex; gap:5px; flex-wrap:wrap; margin-top:9px;}
+.tag{font-size:10.5px; padding:3.5px 9px; border-radius:7px; background:#F1ECDF; color:var(--brand2); font-weight:600; letter-spacing:.1px;}
 .tag.wine{background:#F3E4E0; color:var(--brand);}
-.empty{padding:32px 16px; text-align:center; color:var(--muted); font-size:13.5px;}
+.empty{padding:40px 16px; text-align:center; color:var(--muted); font-size:13.5px;}
+
+/* ---------- 홈 ---------- */
+.homeHero{padding:28px 20px 18px;}
+.homeHero .eyebrow{font-size:12px; color:var(--brand); font-weight:700; margin:0 0 6px;}
+.homeHero h1{font-size:25px; margin:0 0 6px; letter-spacing:-.4px; line-height:1.3;}
+.homeHero p{font-size:13px; color:var(--muted); margin:0;}
+.menuBoard{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:6px 20px 24px;
+}
+.menuTile{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 14px; text-align:left; cursor:pointer; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; gap:8px; position:relative; overflow:hidden;
+}
+.menuTile:active{transform:scale(.97);}
+.menuTile .dot{width:8px; height:8px; border-radius:50%; position:absolute; top:14px; right:14px;}
+.menuTile .ic{font-size:26px;}
+.menuTile .lb{font-size:14.5px; font-weight:700; letter-spacing:-.1px;}
+.menuTile .sub{font-size:11px; color:var(--muted);}
+.homeDivider{margin:6px 20px 0; border:none; border-top:1px solid var(--line);}
+.homeFoot{padding:18px 20px 32px; font-size:12px; color:var(--muted); text-align:center;}
 
 /* ---------- 지도 ---------- */
 #tab-map{height:100%;}
@@ -142,6 +169,9 @@ button{font-family:inherit;}
 .spotInfo .cat{font-size:11.5px; color:var(--brand); margin-bottom:3px;}
 .spotInfo .note{font-size:12.5px; color:var(--muted); line-height:1.5;}
 .walkNote{font-size:11.5px; color:var(--muted); padding-left:38px; margin:-4px 0 4px;}
+.backLink{background:none; border:none; color:var(--brand2); font-size:13px; font-weight:600; padding:0 0 10px; cursor:pointer;}
+.routeCard{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin:0 0 10px; cursor:pointer; box-shadow:var(--shadow);}
+.routeCard h3{font-size:14.5px; margin:0 0 4px;}
 
 /* ---------- 폼 ---------- */
 .formGrid{display:flex; flex-direction:column; gap:10px; margin-top:12px;}
@@ -178,8 +208,20 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
 
   <div class="tabpanel" id="tabpanel">
 
+    <!-- 홈 탭 -->
+    <div class="tabcontent" id="tab-home">
+      <div class="homeHero">
+        <p class="eyebrow">SEOUL TOUR</p>
+        <h1 class="serif">오늘, 뭘 할까요?</h1>
+        <p>끌리는 테마를 고르면 어울리는 동네와 동선을 보여드려요</p>
+      </div>
+      <div class="menuBoard" id="homeMenuBoard"></div>
+      <hr class="homeDivider">
+      <div class="homeFoot">테마를 못 정했다면 동네투어 탭에서 전체를 둘러보세요</div>
+    </div>
+
     <!-- 지도 탭 -->
-    <div class="tabcontent" id="tab-map">
+    <div class="tabcontent" id="tab-map" style="display:none;">
       <div id="mapWrap">
         <div id="kakaoMap"></div>
         <div class="mapToolbar" id="mapFilterChips"></div>
@@ -223,7 +265,8 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
   </div>
 
   <div class="tabbar">
-    <button class="tabbtn active" data-tab="map" onclick="switchTab('map')"><span class="ic">🗺️</span>지도</button>
+    <button class="tabbtn active" data-tab="home" onclick="switchTab('home')"><span class="ic">🏠</span>홈</button>
+    <button class="tabbtn" data-tab="map" onclick="switchTab('map')"><span class="ic">🗺️</span>지도</button>
     <button class="tabbtn" data-tab="course" onclick="switchTab('course')"><span class="ic">🏘️</span>동네투어</button>
     <button class="tabbtn" data-tab="food" onclick="switchTab('food')"><span class="ic">🍽️</span>맛집·와인</button>
     <button class="tabbtn" data-tab="transit" onclick="switchTab('transit')"><span class="ic">🚌</span>교통</button>
@@ -431,6 +474,10 @@ const COURSES = [
   {name:'카페3청', cat:'카페', note:'간판 없는 개인카페'},
   {name:'갤러리현대', cat:'갤러리', walk:'5분'},
   {name:'경복궁 동십자각', cat:'볼거리', walk:'5분', note:'코스 마무리 지점'},
+ ],
+ routes:[
+  {name:'북촌 한옥길', range:[0,7]},
+  {name:'삼청동 갤러리·맛집길', range:[7,14]},
  ]},
 {id:'hannam', name:'한남동', type:'지역형', themes:['미술관','와인·나이트라이프'], area:'용산구',
  coord:{lat:37.5407,lng:127.0022},
@@ -445,6 +492,10 @@ const COURSES = [
   {name:'에스더쉬퍼 서울', cat:'갤러리', walk:'4분'},
   {name:'라라브레드 한남점', cat:'카페(디저트)', walk:'4분', note:'골목 깊숙이 숨어있는 디저트카페'},
   {name:'히든배럴 한남', cat:'와인바', walk:'6분', note:'한남오거리 지하, 숨은 와이너리 컨셉'},
+ ],
+ routes:[
+  {name:'리움·갤러리 코스', range:[0,5]},
+  {name:'갤러리·와인 코스', range:[5,10]},
  ]},
 {id:'insadong', name:'인사동', type:'지역형', themes:['미술관','전통·역사'], area:'종로구',
  coord:{lat:37.5745,lng:126.9857},
@@ -457,6 +508,10 @@ const COURSES = [
   {name:'방태막국수', cat:'분식/한식', walk:'4분', note:'막국수+감자전+굴림만두'},
   {name:'인사동촌', cat:'한식(한정식)', walk:'3분', note:'남촌·북촌·서촌 정식'},
   {name:'종각역', cat:'종료점', walk:'8분'},
+ ],
+ routes:[
+  {name:'전통찻집·갤러리 코스', range:[0,4]},
+  {name:'공예·맛집 코스', range:[4,8]},
  ]},
 {id:'pyeongchang-buam', name:'평창동·부암동', type:'지역형', themes:['미술관','야경·전망','산책·자연'], area:'종로구',
  coord:{lat:37.6100,lng:126.9691},
@@ -470,6 +525,10 @@ const COURSES = [
   {name:'내추럴 와인바 야드', cat:'와인바', walk:'1분', note:'환기미술관 바로 옆'},
   {name:'자하미술관', cat:'미술관', walk:'6분', note:'서울에서 가장 높은 곳의 미술관, 인왕산·북악산 전망'},
   {name:'부암동 스코프', cat:'카페(디저트)', walk:'5분', note:'영국식 베이커리'},
+ ],
+ routes:[
+  {name:'평창동 미술관길', range:[0,4]},
+  {name:'부암동 환기·전망길', range:[4,9]},
  ]},
 {id:'jamsil', name:'잠실', type:'지역형', themes:['미술관','야경·전망'], area:'송파구',
  coord:{lat:37.5133,lng:127.1001},
@@ -479,7 +538,8 @@ const COURSES = [
   {name:'석촌호수', cat:'볼거리', walk:'5분', note:'산책로, 벚꽃·야경 명소'},
   {name:'오모리찌개집', cat:'한식', walk:'6분', note:'잠실 토박이 숨은맛집, 3년 숙성 김치찌개'},
   {name:'카페 이클립스', cat:'카페', walk:'3분', note:'석촌호수 바로 앞 테라스뷰'},
- ]},
+ ],
+ routes:[{name:'잠실 전체코스', range:[0,5]}]},
 {id:'seodaemun', name:'서대문', type:'지역형', themes:['전통·역사','산책·자연'], area:'서대문구',
  coord:{lat:37.5741,lng:126.9576},
  spots:[
@@ -489,7 +549,8 @@ const COURSES = [
   {name:'연희동', cat:'이동', walk:'궁동산 넘어'},
   {name:'목란', cat:'중식', walk:'5분', note:'이연복 셰프 운영, 예약 필수'},
   {name:'콘하스', cat:'카페', walk:'3분', note:'컨테이너 인테리어 빈티지 카페'},
- ]},
+ ],
+ routes:[{name:'서대문 전체코스', range:[0,6]}]},
 {id:'sinsa-dosan', name:'신사동·도산대로', type:'지역형', themes:['미술관','핫플레이스'], area:'강남구',
  coord:{lat:37.5163,lng:127.0203},
  spots:[
@@ -500,6 +561,10 @@ const COURSES = [
   {name:'조현화랑 서울', cat:'갤러리', walk:'3분'},
   {name:'새들러하우스', cat:'카페', walk:'5분', note:'가죽공방 겸 카페'},
   {name:'둘세이수와베', cat:'와인바', walk:'5분', note:'가로수길 안쪽, 조용한 와인바'},
+ ],
+ routes:[
+  {name:'옥션·갤러리 코스', range:[0,4]},
+  {name:'카페·와인 코스', range:[4,7]},
  ]},
 {id:'downtown', name:'도심(광화문·남대문·서부역)', type:'지역형', themes:['전통·역사','산책·자연'], area:'중구',
  coord:{lat:37.5720,lng:126.9769},
@@ -512,6 +577,10 @@ const COURSES = [
   {name:'남대문시장 갈치조림골목', cat:'한식', walk:'3분'},
   {name:'서울로7017', cat:'볼거리·산책', walk:'8분', note:'서울역 고가 보행길'},
   {name:'더하우스1932', cat:'카페', walk:'10분', note:'만리동, 서울역 뒷동네 이색카페 골목'},
+ ],
+ routes:[
+  {name:'광화문·정동 코스', range:[0,4]},
+  {name:'남대문·서부역 코스', range:[4,8]},
  ]},
 {id:'hongdae-yeonnam', name:'홍대·연남동', type:'지역형', themes:['미술관','핫플레이스'], area:'마포구',
  coord:{lat:37.5572,lng:126.9245},
@@ -521,7 +590,8 @@ const COURSES = [
   {name:'경의선숲길(연트럴파크)', cat:'볼거리·산책', walk:'5분'},
   {name:'연남동 맛집골목', cat:'다국적', walk:'5분'},
   {name:'홍대·합정·상수 와인바', cat:'와인바', walk:'10분', note:'구체 상호는 추후 조사'},
- ]},
+ ],
+ routes:[{name:'홍대·연남 전체코스', range:[0,5]}]},
 {id:'seongsu', name:'성수동', type:'지역형', themes:['미술관','핫플레이스','와인·나이트라이프'], area:'성동구',
  coord:{lat:37.5445,lng:127.0559},
  spots:[
@@ -530,7 +600,8 @@ const COURSES = [
   {name:'서울숲', cat:'볼거리·산책', walk:'10분'},
   {name:'로우키 성수', cat:'카페', walk:'5분', note:'성수 대표 스페셜티커피'},
   {name:'리타르단도', cat:'와인바', walk:'5분', note:'간판 없는 지하 숨은 와인바'},
- ]},
+ ],
+ routes:[{name:'성수 전체코스', range:[0,5]}]},
 {id:'itaewon', name:'이태원', type:'지역형', themes:['와인·나이트라이프','핫플레이스'], area:'용산구',
  coord:{lat:37.5344,lng:126.9908},
  spots:[
@@ -538,7 +609,8 @@ const COURSES = [
   {name:'경리단길', cat:'볼거리·산책', walk:'8분'},
   {name:'더젤(THE JELL)', cat:'와인바', walk:'5분', note:'24년 역사, 1세대 와인샵, 남산뷰'},
   {name:'이태원 앤틱거리', cat:'볼거리', walk:'6분'},
- ]},
+ ],
+ routes:[{name:'이태원 전체코스', range:[0,4]}]},
 {id:'gangnam-station', name:'강남역', type:'지역형', themes:['핫플레이스'], area:'강남구',
  coord:{lat:37.4979,lng:127.0276},
  spots:[
@@ -546,7 +618,8 @@ const COURSES = [
   {name:'강남 진해장', cat:'한식', walk:'6분', note:'현지인 내장탕 노포'},
   {name:'골목집', cat:'한식(주점)', walk:'3분', note:'막걸리·김치전'},
   {name:'교보타워 사거리·센터필드', cat:'볼거리', walk:'5분'},
- ]},
+ ],
+ routes:[{name:'강남역 전체코스', range:[0,4]}]},
 {id:'ddp-market', name:'동대문·신당동 시장투어', type:'지역형', themes:['시장'], area:'중구',
  coord:{lat:37.5665,lng:127.0092},
  spots:[
@@ -554,7 +627,8 @@ const COURSES = [
   {name:'광장시장', cat:'시장·맛집', walk:'8분', note:'빈대떡·마약김밥·육회'},
   {name:'동대문종합시장·평화시장', cat:'시장', walk:'5분', note:'원단·의류 도매'},
   {name:'서울중앙시장(힙당동)', cat:'시장·카페', walk:'신당역 이동', note:'옥경이네 건생선, 청년창업 카페'},
- ]},
+ ],
+ routes:[{name:'동대문·신당동 전체코스', range:[0,4]}]},
 {id:'doseong-naksan', name:'도성 · 낙산구간', type:'루트형', themes:['전통·역사','산책·자연'], area:'종로구',
  coord:{lat:37.5807,lng:127.0074},
  spots:[
@@ -562,18 +636,40 @@ const COURSES = [
   {name:'낙산공원', cat:'볼거리·산책', walk:'15분'},
   {name:'이화벽화마을', cat:'볼거리', walk:'10분'},
   {name:'흥인지문', cat:'종료점', walk:'15분', note:'약 1시간, 가장 가벼운 구간'},
- ]},
+ ],
+ routes:[{name:'낙산구간 전체', range:[0,4]}]},
 ];
-const THEMES = ['전체','미술관','시장','야경·전망','전통·역사','산책·자연','와인·나이트라이프','핫플레이스'];
+const THEMES = ['전체','미술관','시장','야경·전망','전통·역사','산책·자연','와인·나이트라이프','핫플레이스','기타'];
+const THEME_META = {
+  '미술관':{icon:'🎨', color:'var(--brand2)', sub:'갤러리·전시 도는 날'},
+  '시장':{icon:'🧺', color:'var(--gold)', sub:'전통시장·먹거리 골목'},
+  '야경·전망':{icon:'🌃', color:'var(--plum)', sub:'노을·야경이 좋은 곳'},
+  '전통·역사':{icon:'🏯', color:'var(--brand)', sub:'한옥·고궁·성곽길'},
+  '산책·자연':{icon:'🌳', color:'var(--teal)', sub:'숲길·산책로'},
+  '와인·나이트라이프':{icon:'🍷', color:'var(--brand)', sub:'저녁 한잔하기 좋은 곳'},
+  '핫플레이스':{icon:'✨', color:'var(--gold)', sub:'요즘 뜨는 동네'},
+  '기타':{icon:'🗂️', color:'var(--muted)', sub:'전체 둘러보기'},
+};
 let activeTheme='전체';
 
+function renderHomeMenu(){
+  const wrap=document.getElementById('homeMenuBoard'); if(!wrap) return; wrap.innerHTML='';
+  THEMES.filter(t=>t!=='전체').forEach(t=>{
+    const meta=THEME_META[t]||{icon:'📍',color:'var(--muted)',sub:''};
+    const tile=document.createElement('button');
+    tile.className='menuTile';
+    tile.innerHTML=`<span class="dot" style="background:${meta.color}"></span><span class="ic">${meta.icon}</span><span class="lb">${t}</span><span class="sub">${meta.sub}</span>`;
+    tile.onclick=()=>{ activeTheme = (t==='기타') ? '전체' : t; switchTab('course'); renderThemeChips(); renderCourseList(); };
+    wrap.appendChild(tile);
+  });
+}
 function renderThemeChips(){
   const wrap=document.getElementById('themeChips'); wrap.innerHTML='';
   THEMES.forEach(t=>{
     const b=document.createElement('button');
     b.className='chip'+(t===activeTheme?' active':'');
     b.textContent=t;
-    b.onclick=()=>{ activeTheme=t; renderThemeChips(); renderCourseList(); };
+    b.onclick=()=>{ activeTheme=(t==='기타')?'전체':t; renderThemeChips(); renderCourseList(); };
     wrap.appendChild(b);
   });
 }
@@ -584,23 +680,59 @@ function renderCourseList(){
   list.forEach(c=>{
     const card=document.createElement('div'); card.className='card';
     card.style.cursor='pointer';
-    card.onclick=()=>openCourseDetail(c.id);
+    card.onclick=()=>openAreaDetail(c.id);
     card.innerHTML = `
       <h3>${c.name}</h3>
-      <div class="meta">${c.type} · ${c.area} · 스팟 ${c.spots.length}곳</div>
+      <div class="meta">${c.type} · ${c.area} · 스팟 ${c.spots.length}곳 · 코스 ${c.routes.length}개</div>
       <div class="desc">${c.spots.slice(0,4).map(s=>s.name).join(' → ')}${c.spots.length>4?' …':''}</div>
       <div class="tagrow">${c.themes.map(t=>`<span class="tag${t==='와인·나이트라이프'?' wine':''}">${t}</span>`).join('')}</div>
     `;
     wrap.appendChild(card);
   });
 }
-function openCourseDetail(id){
-  const c = COURSES.find(x=>x.id===id); if(!c) return;
-  document.getElementById('courseDetailTitle').textContent = c.name;
-  const body = document.getElementById('courseDetailBody');
+
+/* ---- 지역 상세: 추천 코스 목록 + 랜덤 코스 ---- */
+let currentArea=null;
+function openAreaDetail(id){
+  currentArea = COURSES.find(x=>x.id===id); if(!currentArea) return;
+  document.getElementById('courseDetailTitle').textContent = currentArea.name;
+  renderAreaRouteList();
+  document.getElementById('courseDetail').classList.add('show');
+}
+function renderAreaRouteList(){
+  const c=currentArea; const body=document.getElementById('courseDetailBody');
   body.innerHTML = `
-    <div class="tagrow" style="margin-bottom:14px;">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
-    ${c.spots.map((s,i)=>`
+    <div class="tagrow" style="margin-bottom:16px;">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    <button class="btn" style="background:var(--gold);margin-bottom:18px;" onclick="renderRandomRoute()">🎲 오늘의 랜덤 코스</button>
+    <h3 style="font-size:13px;color:var(--muted);margin:0 0 10px;font-weight:700;">추천 코스 · 반나절용으로 나눴어요</h3>
+    ${c.routes.map((r,i)=>{
+      const spots=c.spots.slice(r.range[0], r.range[1]);
+      return `<div class="routeCard" onclick="renderRouteSteps(${i})">
+        <h3>${r.name}</h3>
+        <div class="meta">스팟 ${spots.length}곳</div>
+        <div class="desc">${spots.map(s=>s.name).join(' → ')}</div>
+      </div>`;
+    }).join('')}
+  `;
+}
+function renderRouteSteps(routeIdx){
+  const c=currentArea; const r=c.routes[routeIdx];
+  const spots=c.spots.slice(r.range[0], r.range[1]);
+  renderSteps(r.name, spots, false);
+}
+function renderRandomRoute(){
+  const c=currentArea;
+  const pool=c.spots.filter(s=>!['시작점','종료점','이동'].includes(s.cat));
+  const n=Math.min(5, pool.length);
+  const shuffled=[...pool].sort(()=>Math.random()-0.5).slice(0,n);
+  renderSteps('오늘의 랜덤 코스', shuffled, true);
+}
+function renderSteps(title, spots, isRandom){
+  const body=document.getElementById('courseDetailBody');
+  body.innerHTML = `
+    <button class="backLink" onclick="renderAreaRouteList()">‹ ${currentArea.name} 코스 목록으로</button>
+    <h3 style="font-size:16.5px;margin:8px 0 6px;" class="serif">${title}</h3>
+    ${spots.map((s,i)=>`
       <div class="spotStep">
         <div class="spotNum">${i+1}</div>
         <div class="spotInfo">
@@ -611,8 +743,8 @@ function openCourseDetail(id){
       </div>
       ${s.walk?`<div class="walkNote">도보 ${s.walk}</div>`:''}
     `).join('')}
+    ${isRandom?`<button class="btn secondary" style="margin-top:16px;" onclick="renderRandomRoute()">🔀 다시 뽑기</button>`:''}
   `;
-  document.getElementById('courseDetail').classList.add('show');
 }
 function closeDetail(id){ document.getElementById(id).classList.remove('show'); }
 
@@ -946,11 +1078,12 @@ function renderMapMarkers(){
    초기화
 ===================================================================== */
 function initAppData(){
+  renderHomeMenu();
   renderThemeChips(); renderCourseList();
   renderFoodCatChips(); renderFoodList();
   loadBucketPlaces();
   loadFavorites();
-  switchTab('map');
+  switchTab('home');
 }
 </script>
 </body>

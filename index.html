@@ -702,6 +702,63 @@ const COURSES = [
   {name:'흥인지문', cat:'종료점', walk:'15분', note:'약 1시간, 가장 가벼운 구간'},
  ],
  routes:[{name:'낙산구간 전체', range:[0,4]}]},
+{id:'doseong-baegak', name:'도성 · 백악구간', type:'루트형', themes:['전통·역사','산책·자연'], area:'종로구',
+ coord:{lat:37.5975,lng:126.9614},
+ spots:[
+  {name:'창의문', cat:'시작점'},
+  {name:'백악마루(342m)', cat:'볼거리·산책', walk:'50분', note:'북악산 정상, 서울 북쪽 조망'},
+  {name:'숙정문', cat:'볼거리', walk:'40분'},
+  {name:'혜화문', cat:'종료점', walk:'50분', note:'약 3시간30분, 청와대 인근 일부 구간 신분증 지참 필요'},
+ ],
+ routes:[{name:'백악구간 전체', range:[0,4]}]},
+{id:'doseong-namsan', name:'도성 · 남산구간', type:'루트형', themes:['전통·역사','산책·자연','야경·전망'], area:'중구',
+ coord:{lat:37.5595,lng:127.0057},
+ spots:[
+  {name:'장충체육관·광희문', cat:'시작점'},
+  {name:'N서울타워', cat:'볼거리·전망', walk:'1시간30분', note:'서울 전경, 야경 명소'},
+  {name:'백범광장·숭례문', cat:'종료점', walk:'1시간', note:'약 4시간30분, 4구간 중 가장 긴 코스'},
+ ],
+ routes:[{name:'남산구간 전체', range:[0,3]}]},
+{id:'doseong-inwang', name:'도성 · 인왕구간', type:'루트형', themes:['전통·역사','산책·자연','야경·전망'], area:'종로구',
+ coord:{lat:37.5824,lng:126.9598},
+ spots:[
+  {name:'돈의문 터', cat:'시작점'},
+  {name:'인왕산', cat:'볼거리·산책', walk:'1시간30분', note:'인왕산 능선, 서촌·윤동주문학관 인접'},
+  {name:'창의문', cat:'종료점', walk:'1시간', note:'약 4시간30분, 조용하고 경치 좋음'},
+ ],
+ routes:[{name:'인왕구간 전체', range:[0,3]}]},
+{id:'myeongdong', name:'명동', type:'지역형', themes:['전통·역사','핫플레이스'], area:'중구',
+ coord:{lat:37.5636,lng:126.9834},
+ spots:[
+  {name:'명동역', cat:'시작점'},
+  {name:'명동성당', cat:'볼거리', walk:'8분', note:'1898년, 한국 최초 고딕양식 성당, 야경 명소'},
+  {name:'르빵(LE PAIN)', cat:'카페', walk:'1분', note:'명동성당 지하 베이커리, 크루아상'},
+  {name:'명동 쇼핑거리', cat:'볼거리', walk:'8분', note:'로드샵·백화점 밀집'},
+  {name:'명동교자', cat:'분식', walk:'5분', note:'1966년, 미쉐린 빕구르망, 칼국수·만두'},
+  {name:'하동관', cat:'한식', walk:'5분', note:'미쉐린 빕구르망, 곰탕 노포'},
+  {name:'명동 야시장', cat:'시장', walk:'10분', note:'충무로2가 일대, 저녁 길거리음식 포장마차'},
+  {name:'남산골한옥마을', cat:'볼거리', walk:'12분', note:'남산 케이블카 승강장 연계, 도성 남산구간과 이어짐'},
+ ],
+ routes:[
+  {name:'성당·쇼핑 코스', range:[0,4]},
+  {name:'노포·야시장 코스', range:[4,8]},
+ ]},
+{id:'seosulla-gil', name:'서순라길(종묘 돌담길)', type:'지역형', themes:['전통·역사','와인·나이트라이프','핫플레이스'], area:'종로구',
+ coord:{lat:37.5714,lng:126.9917},
+ spots:[
+  {name:'종로3가역', cat:'시작점'},
+  {name:'우리술집 다람쥐', cat:'한식', walk:'5분', note:'전통주 한식주점, 새우미나리전·순두부찌개, 예약 필수'},
+  {name:'카페사사', cat:'카페', walk:'3분', note:'한옥카페, 전통차·디저트'},
+  {name:'서순라길 한옥카페', cat:'카페', walk:'3분', note:'돌담뷰 한옥, 티라미수·파울라너'},
+  {name:'돌담', cat:'카페', walk:'3분', note:'낮술+카페 겸업, 돌담슈페너·서순라떼'},
+  {name:'서울집시', cat:'와인바', walk:'3분', note:'브루어리 펍, 로컬재료 수제맥주'},
+  {name:'퀸즈가드', cat:'와인바', walk:'3분', note:'영국인+한국인 부부 운영, 영국식 담금주·진'},
+  {name:'비틀비틀 비틀스타코 서순라점', cat:'분식', walk:'3분', note:'타코, 가성비 좋은 캐주얼'},
+ ],
+ routes:[
+  {name:'전통주·찻집 코스', range:[0,4]},
+  {name:'펍·와인 코스', range:[4,8]},
+ ]},
 ];
 const THEMES = ['전체','미술관','시장','야경·전망','전통·역사','산책·자연','와인·나이트라이프','핫플레이스','기타'];
 const THEME_META = {
@@ -1084,6 +1141,12 @@ const FOOD_REF = [
  {name:'강남 진해장', cat:'한식', area:'강남역', regionId:'gangnam-station', note:'현지인 내장탕 노포'},
  {name:'골목집', cat:'한식', area:'강남역', regionId:'gangnam-station', note:'막걸리·김치전'},
  {name:'옥경이네 건생선', cat:'기타', area:'신당동', regionId:'ddp-market', note:'서울중앙시장 대표 건어물'},
+ {name:'우리술집 다람쥐', cat:'한식', area:'서순라길', regionId:'seosulla-gil', note:'전통주 한식주점, 새우미나리전·순두부찌개'},
+ {name:'돌담', cat:'카페', area:'서순라길', regionId:'seosulla-gil', note:'낮술+카페 겸업, 돌담슈페너'},
+ {name:'서울집시', cat:'와인', area:'서순라길', regionId:'seosulla-gil', note:'브루어리 펍, 로컬재료 수제맥주'},
+ {name:'퀸즈가드', cat:'와인', area:'서순라길', regionId:'seosulla-gil', note:'영국식 담금주·진 펍'},
+ {name:'명동교자', cat:'분식', area:'명동', regionId:'myeongdong', note:'1966년 노포, 미쉐린 빕구르망, 칼국수·만두'},
+ {name:'하동관', cat:'한식', area:'명동', regionId:'myeongdong', note:'미쉐린 빕구르망, 곰탕 노포'},
 ];
 const FOOD_CATS = ['전체','한식','분식','양식','일식','중식','카페','와인','기타'];
 let foodSource='curated', activeFoodCat='전체';

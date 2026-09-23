@@ -1374,6 +1374,7 @@ function geocodeSpot(spot, contextName){
   });
 }
 let mapMarkers=[];
+let activeCourseInfoWindow=null;
 function ensureKakaoMap(){
   if(!window.kakao || !window.kakao.maps) return;
   kakao.maps.load(()=>{
@@ -1387,12 +1388,17 @@ function ensureKakaoMap(){
 }
 function renderMapMarkers(){
   if(!kakaoMap) return;
+  if(activeCourseInfoWindow){ activeCourseInfoWindow.close(); activeCourseInfoWindow=null; }
   mapMarkers.forEach(m=>m.setMap(null)); mapMarkers=[];
   const addMarker=(lat,lng,title,emoji)=>{
     const pos = new kakao.maps.LatLng(lat,lng);
     const marker = new kakao.maps.Marker({position:pos, map:kakaoMap});
     const iw = new kakao.maps.InfoWindow({content:`<div style="padding:6px 9px;font-size:12px;">${emoji} ${title}</div>`});
-    kakao.maps.event.addListener(marker,'click',()=>iw.open(kakaoMap,marker));
+    kakao.maps.event.addListener(marker,'click',()=>{
+      if(activeCourseInfoWindow) activeCourseInfoWindow.close();
+      iw.open(kakaoMap,marker);
+      activeCourseInfoWindow = iw;
+    });
     mapMarkers.push(marker);
   };
   if(activeMapCat==='전체' || activeMapCat==='동네투어'){
@@ -1406,8 +1412,10 @@ function renderMapMarkers(){
         </div>`
       });
       kakao.maps.event.addListener(marker,'click',()=>{
+        if(activeCourseInfoWindow) activeCourseInfoWindow.close();
         focusAreaOnMap(c);
         iw.open(kakaoMap, marker);
+        activeCourseInfoWindow = iw;
       });
       mapMarkers.push(marker);
     });

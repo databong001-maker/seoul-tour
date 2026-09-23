@@ -192,6 +192,16 @@ button{font-family:inherit;}
   padding:10px 14px; font-size:12.5px; font-weight:700; box-shadow:0 3px 10px rgba(0,0,0,.15);
   cursor:pointer;
 }
+#todaysRouteBadge{
+  position:absolute; top:56px; left:10px; right:10px; z-index:5;
+  background:#FFC914; border:2px solid #1C1B18; border-radius:12px;
+  padding:9px 12px; display:flex; align-items:center; justify-content:space-between;
+  font-size:12.5px; font-weight:800; color:#1C1B18; box-shadow:0 3px 10px rgba(0,0,0,.2);
+}
+#todaysRouteBadge button{
+  border:none; background:#1C1B18; color:#fff; padding:5px 9px; border-radius:7px;
+  font-size:11px; font-weight:700; cursor:pointer;
+}
 
 /* ---------- 오버레이/바텀시트 ---------- */
 .overlay{
@@ -274,6 +284,7 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
       <div id="mapWrap">
         <div id="kakaoMap"></div>
         <div class="mapToolbar" id="mapFilterChips"></div>
+        <div id="todaysRouteBadge" style="display:none;"></div>
         <button class="mapResetFab" onclick="resetMapView()">🔍 전체보기</button>
         <button class="mapFab" onclick="openRouteSheet()">🚌 길찾기</button>
       </div>
@@ -987,7 +998,29 @@ function spinRoulette(){
     const routeLen = Math.min(5, n);
     const picked=[]; for(let k=0;k<routeLen;k++){ picked.push(pool[(winIndex+k)%n]); }
     renderSteps('🎡 룰렛 코스', picked, true);
+    setTodaysRoute(picked, currentArea.name);
   }, 3300);
+}
+/* ---- 오늘의 룰렛 코스를 지도에 별도 표시 ---- */
+let todaysRoute=[], todaysRouteAreaName='';
+async function setTodaysRoute(spots, areaName){
+  todaysRoute = spots; todaysRouteAreaName = areaName;
+  for(const s of spots){
+    if(!s.lat){ await geocodeSpot(s, areaName); }
+  }
+  renderMapMarkers();
+  renderTodaysRouteBadge();
+}
+function clearTodaysRoute(){
+  todaysRoute=[]; todaysRouteAreaName='';
+  renderMapMarkers();
+  renderTodaysRouteBadge();
+}
+function renderTodaysRouteBadge(){
+  const el=document.getElementById('todaysRouteBadge'); if(!el) return;
+  if(!todaysRoute.length){ el.style.display='none'; el.innerHTML=''; return; }
+  el.style.display='flex';
+  el.innerHTML = `<span>🎯 오늘의 코스 · ${todaysRouteAreaName} ${todaysRoute.length}곳</span><button onclick="clearTodaysRoute()">지우기 ✕</button>`;
 }
 let __stepsSpots=[];
 function renderSteps(title, spots, isRandom){
@@ -1386,6 +1419,18 @@ function renderMapMarkers(){
   if(activeMapCat==='전체' || activeMapCat==='즐겨찾기'){
     favorites.forEach(f=> addMarker(f.lat, f.lng, f.name, '⭐'));
   }
+  /* 오늘의 룰렛 코스는 필터와 상관없이 항상 별도 아이콘으로 표시 */
+  todaysRoute.forEach((s,i)=>{
+    if(!s.lat) return;
+    const pos = new kakao.maps.LatLng(s.lat, s.lng);
+    const content = `<div style="display:flex;flex-direction:column;align-items:center;transform:translateY(-6px);">
+      <div style="background:#FFC914;border:2.5px solid #1C1B18;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.35);">${i+1}</div>
+      <div style="margin-top:2px;background:#1C1B18;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;white-space:nowrap;">${s.name}</div>
+    </div>`;
+    const overlay = new kakao.maps.CustomOverlay({ position:pos, content, yAnchor:1 });
+    overlay.setMap(kakaoMap);
+    mapMarkers.push(overlay);
+  });
 }
 
 /* =====================================================================

@@ -677,16 +677,23 @@ const COURSES = [
   {name:'광화문·정동 코스', range:[0,4]},
   {name:'남대문·서부역 코스', range:[4,8]},
  ]},
-{id:'hongdae-yeonnam', name:'홍대·연남동', type:'지역형', themes:['미술관','핫플레이스'], area:'마포구',
+{id:'hongdae-yeonnam', name:'홍대·연남동·합정·상수', type:'지역형', themes:['미술관','핫플레이스','와인·나이트라이프'], area:'마포구',
  coord:{lat:37.5572,lng:126.9245},
  spots:[
   {name:'홍대입구역', cat:'시작점'},
   {name:'갤러리 덕스', cat:'갤러리(소형)', walk:'1분'},
   {name:'경의선숲길(연트럴파크)', cat:'볼거리·산책', walk:'5분'},
   {name:'연남동 맛집골목', cat:'다국적', walk:'5분'},
-  {name:'홍대·합정·상수 와인바', cat:'와인바', walk:'10분', note:'구체 상호는 추후 조사'},
+  {name:'합정역', cat:'시작점', note:'홍대·연남 코스와 이어서 걸을 수 있음, 합정·상수 와인바 코스는 여기서 시작'},
+  {name:'르파르', cat:'와인바', walk:'10분', note:'합정동 성지길 35, 오너 셰프의 와인 안목으로 유명, 카나페·알리오올리오 추천'},
+  {name:'아프릴(April)', cat:'와인바', walk:'5분', note:'합정역 5번 출구 도보 5분, 루프탑 와인바 겸 파스타, 화이트·레드·스파클링 구비, 두 번째 병부터 20% 할인'},
+  {name:'상수역', cat:'이동', walk:'도보 10분 또는 2호선 1정거장', note:'합정역에서 상수역 방면'},
+  {name:'상수 노어 와인바', cat:'와인바', walk:'5분', note:'콜키지 프리, 상수동 골목 분위기'},
  ],
- routes:[{name:'홍대·연남 전체코스', range:[0,5]}]},
+ routes:[
+  {name:'홍대·연남 전체코스', range:[0,4]},
+  {name:'합정·상수 와인바 코스', range:[4,9]},
+ ]},
 {id:'seongsu', name:'성수동', type:'지역형', themes:['미술관','핫플레이스','와인·나이트라이프'], area:'성동구',
  coord:{lat:37.5445,lng:127.0559},
  spots:[
@@ -894,14 +901,15 @@ const COURSES = [
   {name:'예빈당 여의도한강공원점', cat:'카페(전통)', walk:'5분', note:'한강 서울크루즈 건물, 코리안 디저트, 10~22시'},
   {name:'한강 파라다이스', cat:'양식', walk:'5분', note:'한강뷰 치킨·피자, 여의동로 252, 11:30~22시'},
   {name:'서울달', cat:'볼거리·전망', walk:'20분', note:'여의도공원 내 기구 전망대, 여의공원로 68-1, 성인 25,000원(후기 기준)'},
+  {name:'윤중로 벚꽃길', cat:'볼거리·산책', walk:'10분', note:'국회의사당 옆 여의서로, 4월 초 서울 벚꽃 명소 중 하나, 여의도 벚꽃축제 기간엔 저녁까지 혼잡, 평일 이른 오전 추천'},
   {name:'여의도역', cat:'시작점', note:'5·9호선 환승역'},
   {name:'더현대 서울', cat:'볼거리', walk:'10분', note:'실내 정원이 있는 백화점, 지하 식당가'},
   {name:'킵댓 여의도점', cat:'카페', walk:'5분', note:'국제금융로2길 32, 매일 7~21:30'},
   {name:'강변서재', cat:'카페', walk:'15분', note:'국회 사랑재 옆 건물 2층, 월~금 8:30~19시·주말 11~19시'},
  ],
  routes:[
-  {name:'한강·서울달 코스', range:[0,5]},
-  {name:'더현대·국회 앞 코스', range:[5,9]},
+  {name:'한강·서울달·벚꽃길 코스', range:[0,6]},
+  {name:'더현대·국회 앞 코스', range:[6,10]},
  ]},
 {id:'seongbuk', name:'성북동', type:'지역형', themes:['미술관','전통·역사'], area:'성북구',
  coord:{lat:37.5920,lng:127.0010},
@@ -1066,6 +1074,38 @@ const THEME_META = {
 let activeTheme='전체';
 
 /* =====================================================================
+   데이터 무결성 자동 검사 (앱 로딩 시 1회, 화면엔 안 보이고 콘솔에만 경고)
+   → 코스를 추가/수정할 때 실수를 바로 잡기 위한 용도
+===================================================================== */
+(function validateAppData(){
+  const warns = [];
+  const themeNames = THEMES.filter(t => t !== '전체');
+
+  // 1) 코스 themes 오타 체크
+  COURSES.forEach(c=>{
+    (c.themes||[]).forEach(t=>{
+      if(!themeNames.includes(t)) warns.push(`테마 오타: '${c.id}' 코스의 '${t}'가 THEMES에 없음`);
+    });
+  });
+
+  // 2) FOOD_REF의 regionId가 실제 코스 ID인지 체크
+  const courseIds = new Set(COURSES.map(c=>c.id));
+  (typeof FOOD_REF !== 'undefined' ? FOOD_REF : []).forEach(f=>{
+    if(f.regionId && !courseIds.has(f.regionId)) warns.push(`맛집 지역ID 불일치: '${f.name}'의 regionId '${f.regionId}'가 COURSES에 없음`);
+  });
+
+  // 3) THEMES에 있는데 THEME_META에 아이콘/설명이 없는 테마 체크
+  themeNames.forEach(t=>{
+    if(!THEME_META[t]) warns.push(`테마 메타 누락: '${t}'가 THEME_META에 없어 기본 아이콘으로 표시됨`);
+  });
+
+  if(warns.length){
+    console.warn(`[데이터 검사] ${warns.length}건 발견`);
+    warns.forEach(w=>console.warn(' - '+w));
+  }
+})();
+
+/* =====================================================================
    월별 추천: 코스 ID로만 연결 (이름·테마 등은 COURSES에서 읽음)
    → 새 코스를 만들면 여기에 id + 한 줄 이유만 추가하면 홈 카드·배지가 자동 반영
 ===================================================================== */
@@ -1078,7 +1118,7 @@ const MONTHLY_PICKS = {
   1:[{id:'seorae',why:'한가람미술관과 베이커리 실내 코스'},{id:'insadong',why:'찻집·갤러리에서 몸 녹이기'},{id:'hyehwa',why:'실내 전시·공연 보기 좋은 달'}],
   2:[{id:'yongsan',why:'박물관 실내 관람 + 용리단길 식사'},{id:'ddp-market',why:'따뜻한 시장 먹거리'},{id:'namdaemun-market',why:'국물 노포 시장 투어'}],
   3:[{id:'seochon',why:'초봄 골목 산책'},{id:'mullae',why:'실내 갤러리·카페 위주'},{id:'doseong-naksan',why:'하순부터 성곽길 걷기 좋아요'}],
-  4:[{id:'yeouido',why:'한강과 더현대 (벚꽃철)'},{id:'jamsil',why:'석촌호수 벚꽃'},{id:'seonyudo',why:'다른 곳보다 늦게 피는 벚꽃'}],
+  4:[{id:'yeouido',why:'윤중로 벚꽃길과 한강 (벚꽃철)'},{id:'jamsil',why:'석촌호수 벚꽃'},{id:'seonyudo',why:'다른 곳보다 늦게 피는 벚꽃'}],
   5:[{id:'olympic-park',why:'초록 조각공원과 몽촌토성'},{id:'hongdae-yeonnam',why:'경의선숲길 초록'},{id:'pyeongchang-buam',why:'초록 언덕의 미술관·카페'}],
   6:[{id:'changdeok',why:'장마 전 후원 녹음 (후원은 예매 필요)'},{id:'seongsu',why:'전시 보고 저녁 와인'},{id:'mangwon',why:'한강 초여름 저녁'}],
   7:[{id:'samseong',why:'코엑스 실내 코스'},{id:'sinsa-dosan',why:'옥션·갤러리 실내 관람'},{id:'gangnam-station',why:'실내 맛집 코스'}],
@@ -1611,6 +1651,9 @@ const FOOD_REF = [
  {name:'킷테', cat:'카페', area:'해방촌', regionId:'haebangchon', note:'적산가옥 카페'},
  {name:'언뎁트', cat:'카페', area:'해방촌', regionId:'haebangchon', note:'적산가옥 카페, 소품샵 함께 운영'},
  {name:'와일드덕칸틴', cat:'와인', area:'해방촌', regionId:'haebangchon', note:'내추럴와인과 식사'},
+ {name:'르파르', cat:'와인', area:'합정', regionId:'hongdae-yeonnam', note:'오너 셰프 와인 안목, 카나페·알리오올리오'},
+ {name:'아프릴(April)', cat:'와인', area:'합정', regionId:'hongdae-yeonnam', note:'루프탑 와인바 겸 파스타, 두 번째 병부터 20% 할인'},
+ {name:'상수 노어 와인바', cat:'와인', area:'상수', regionId:'hongdae-yeonnam', note:'콜키지 프리 와인바'},
  {name:'찰리스 그로서리', cat:'기타', area:'해방촌', regionId:'haebangchon', note:'해외 식료품점, 맥주 한잔'},
  {name:'업스탠딩', cat:'카페', area:'해방촌', regionId:'haebangchon', note:'롱블랙이 맛있는 골목 카페, 신흥로 99-11'},
  {name:'나폴리 키친', cat:'양식', area:'해방촌', regionId:'haebangchon', note:'숙대 앞 화덕피자·빠네, 청파로45길 29'},

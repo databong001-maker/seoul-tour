@@ -134,6 +134,22 @@ button{font-family:inherit;}
 }
 .homeCourseLink:active{transform:scale(.98);}
 
+/* ---------- 이달의 추천 ---------- */
+.monthCard{margin:0 20px 14px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px 4px; box-shadow:var(--shadow);}
+.monthHead{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+.monthHead .ttl{flex:1; min-width:0;}
+.monthHead .ttl b{display:block; font-size:14.5px; letter-spacing:-.1px;}
+.monthHead .ttl span{display:block; font-size:11.5px; color:var(--muted); margin-top:2px;}
+.monthNav{flex-shrink:0; width:30px; height:30px; border:none; border-radius:8px; background:#F1ECDF; color:var(--ink); font-size:15px; cursor:pointer;}
+.monthNav:active{transform:scale(.94);}
+.monthPick{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 0; border-top:1px solid var(--line); cursor:pointer;}
+.monthPick .nm{display:block; font-size:13.5px; font-weight:700;}
+.monthPick .why{display:block; font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.4;}
+.monthPick .go{color:var(--muted); font-size:16px;}
+.tag.season{background:#E3EEDF; color:#2E6B3C;}
+.tag.season.now{background:#2E6B3C; color:#fff;}
+.seasonWhy{font-size:12px; color:var(--muted); line-height:1.6; margin:0 0 14px;}
+
 /* ---------- 룰렛 (일부러 튀는 색감 + 움직임) ---------- */
 .rouletteWrap{padding:14px 0 10px; text-align:center;}
 .rouletteWrap h3{font-size:13px; color:var(--muted); font-weight:700; margin:0 0 14px;}
@@ -274,6 +290,7 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
         <p class="eyebrow">TODAY'S SEOUL</p>
         <h1 class="serif">오늘 어디 갈까?</h1>
       </div>
+      <div id="homeMonthCard"></div>
       <button class="homeCourseLink" id="homeCourseLinkBtn" onclick="goToRecommend()">📋 추천 코스 둘러보기 ›</button>
       <div class="chiprow" id="homePriorityChips" style="padding:6px 20px 4px;"></div>
       <div id="homeRouletteBody"></div>
@@ -514,7 +531,7 @@ function switchTab(name){
   document.getElementById('tab-'+name).style.display='block';
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   if(name==='map'){ ensureKakaoMap(); }
-  if(name==='home'){ homeMode='all'; updateCourseCountLabels(); renderHomePriorityChips(); dispatchHomeMode(); }
+  if(name==='home'){ homeMode='all'; homeMonth=new Date().getMonth()+1; updateCourseCountLabels(); renderMonthCard(); renderHomePriorityChips(); dispatchHomeMode(); }
 }
 
 /* =====================================================================
@@ -1034,6 +1051,77 @@ const THEME_META = {
 };
 let activeTheme='전체';
 
+/* =====================================================================
+   월별 추천: 코스 ID로만 연결 (이름·테마 등은 COURSES에서 읽음)
+   → 새 코스를 만들면 여기에 id + 한 줄 이유만 추가하면 홈 카드·배지가 자동 반영
+===================================================================== */
+const MONTH_NOTES = {
+  1:'한겨울 · 실내와 따뜻한 곳 위주', 2:'늦겨울 · 실내 위주', 3:'초봄 · 하순부터 걷기 좋아져요', 4:'벚꽃철',
+  5:'초록 · 나들이 시즌', 6:'초여름 · 장마 전', 7:'장마·폭염 · 실내 위주', 8:'한여름 · 낮엔 실내, 밤엔 야외',
+  9:'초가을 · 아트위크', 10:'가을 · 걷기 가장 좋은 달', 11:'늦가을 · 단풍', 12:'연말 · 겨울 야경'
+};
+const MONTHLY_PICKS = {
+  1:[{id:'seorae',why:'한가람미술관과 베이커리 실내 코스'},{id:'insadong',why:'찻집·갤러리에서 몸 녹이기'},{id:'hyehwa',why:'실내 전시·공연 보기 좋은 달'}],
+  2:[{id:'yongsan',why:'박물관 실내 관람 + 용리단길 식사'},{id:'ddp-market',why:'따뜻한 시장 먹거리'},{id:'namdaemun-market',why:'국물 노포 시장 투어'}],
+  3:[{id:'seochon',why:'초봄 골목 산책'},{id:'mullae',why:'실내 갤러리·카페 위주'},{id:'doseong-naksan',why:'하순부터 성곽길 걷기 좋아요'}],
+  4:[{id:'yeouido',why:'한강과 더현대 (벚꽃철)'},{id:'jamsil',why:'석촌호수 벚꽃'},{id:'seonyudo',why:'다른 곳보다 늦게 피는 벚꽃'}],
+  5:[{id:'olympic-park',why:'초록 조각공원과 몽촌토성'},{id:'hongdae-yeonnam',why:'경의선숲길 초록'},{id:'pyeongchang-buam',why:'초록 언덕의 미술관·카페'}],
+  6:[{id:'changdeok',why:'장마 전 후원 녹음 (후원은 예매 필요)'},{id:'seongsu',why:'전시 보고 저녁 와인'},{id:'mangwon',why:'한강 초여름 저녁'}],
+  7:[{id:'samseong',why:'코엑스 실내 코스'},{id:'sinsa-dosan',why:'옥션·갤러리 실내 관람'},{id:'gangnam-station',why:'실내 맛집 코스'}],
+  8:[{id:'euljiro',why:'낮엔 전시, 저녁엔 노가리골목'},{id:'itaewon',why:'무더위 피한 밤 나들이'},{id:'haebangchon',why:'오후 3시 이후 저녁 코스'}],
+  9:[{id:'apgujeong-cheongdam',why:'아트위크 청담 갤러리'},{id:'hannam',why:'아트위크 한남 갤러리'},{id:'samcheong-bukchon',why:'아트위크 북촌·삼청 갤러리'}],
+  10:[{id:'olympic-park',why:'나홀로나무 황금빛'},{id:'seonyudo',why:'가을 단풍 산책'},{id:'doseong-inwang',why:'맑은 하늘 아래 성곽길'},{id:'doseong-baegak',why:'맑은 하늘 아래 성곽길'}],
+  11:[{id:'changdeok',why:'후원 가을 (후원은 예매 필요)'},{id:'downtown',why:'정동길·덕수궁 돌담길 가을'},{id:'seongbuk',why:'고택·미술관 가을 산책'}],
+  12:[{id:'ikseondong',why:'한옥골목 연말 분위기'},{id:'seosulla-gil',why:'같은 종로3가역, 돌담길 저녁'},{id:'myeongdong',why:'연말 분위기'},{id:'doseong-namsan',why:'맑은 겨울 야경'}]
+};
+const ANYTIME_PICKS = [{id:'seodaemun',why:'실내 비중이 높아 비 오는 날 대체 코스'}];
+// 코스별 추천 달 (MONTHLY_PICKS에서 자동 계산)
+const COURSE_SEASONS = (()=>{
+  const m={};
+  Object.keys(MONTHLY_PICKS).forEach(k=>MONTHLY_PICKS[k].forEach(p=>{ (m[p.id]=m[p.id]||[]).push({month:+k, why:p.why}); }));
+  return m;
+})();
+(function validateMonthlyPicks(){
+  const ids=new Set(COURSES.map(c=>c.id));
+  const bad=[];
+  Object.values(MONTHLY_PICKS).forEach(list=>list.forEach(p=>{ if(!ids.has(p.id)) bad.push(p.id); }));
+  ANYTIME_PICKS.forEach(p=>{ if(!ids.has(p.id)) bad.push(p.id); });
+  if(bad.length) console.warn('[월별추천] COURSES에 없는 id:', [...new Set(bad)]);
+  const none=COURSES.filter(c=>!COURSE_SEASONS[c.id] && !ANYTIME_PICKS.some(p=>p.id===c.id)).map(c=>c.id);
+  if(none.length) console.info('[월별추천] 추천 달이 없는 코스:', none);
+})();
+let homeMonth = new Date().getMonth()+1;
+function shiftHomeMonth(d){ homeMonth = ((homeMonth-1+d+12)%12)+1; renderMonthCard(); }
+function renderMonthCard(){
+  const el=document.getElementById('homeMonthCard'); if(!el) return;
+  const picks=(MONTHLY_PICKS[homeMonth]||[]).filter(p=>COURSES.some(c=>c.id===p.id));
+  const thisMonth = new Date().getMonth()+1;
+  el.innerHTML = `<div class="monthCard">
+    <div class="monthHead">
+      <button class="monthNav" onclick="shiftHomeMonth(-1)" aria-label="이전 달">‹</button>
+      <div class="ttl"><b>🗓 ${homeMonth}월 추천${homeMonth===thisMonth?' · 이번 달':''}</b><span>${MONTH_NOTES[homeMonth]||''}</span></div>
+      <button class="monthNav" onclick="shiftHomeMonth(1)" aria-label="다음 달">›</button>
+    </div>
+    ${picks.map(p=>{ const c=COURSES.find(x=>x.id===p.id);
+      return `<div class="monthPick" onclick="openAreaDetail('${c.id}')"><div><span class="nm">${c.name}</span><span class="why">${p.why}</span></div><span class="go">›</span></div>`;
+    }).join('')}
+  </div>`;
+}
+function seasonTagHtml(id){
+  const out=[]; const now=new Date().getMonth()+1;
+  const ss=COURSE_SEASONS[id]||[];
+  if(ss.length){ const ms=[...new Set(ss.map(x=>x.month))].sort((a,b)=>a-b);
+    out.push(`<span class="tag season${ms.includes(now)?' now':''}">📅 ${ms.join('·')}월 추천</span>`); }
+  if(ANYTIME_PICKS.some(p=>p.id===id)) out.push('<span class="tag season">☔ 비 오는 날 대체</span>');
+  return out.join('');
+}
+function seasonWhyHtml(id){
+  const ss=(COURSE_SEASONS[id]||[]).slice().sort((a,b)=>a.month-b.month);
+  const any=ANYTIME_PICKS.find(p=>p.id===id);
+  const lines=ss.map(x=>`📅 ${x.month}월 — ${x.why}`);
+  if(any) lines.push(`☔ ${any.why}`);
+  return lines.length ? `<p class="seasonWhy">${lines.join('<br>')}</p>` : '';
+}
 function updateCourseCountLabels(){
   const btn=document.getElementById('homeCourseLinkBtn'); if(!btn) return;
   const themeCount=THEMES.filter(t=>t!=='전체').length;
@@ -1236,7 +1324,7 @@ function renderCourseList(){
       <h3>${c.name}</h3>
       <div class="meta">${c.type} · ${c.area} · 스팟 ${c.spots.length}곳 · 코스 ${c.routes.length}개</div>
       <div class="desc">${c.spots.slice(0,4).map(s=>s.name).join(' → ')}${c.spots.length>4?' …':''}</div>
-      <div class="tagrow">${c.themes.map(t=>`<span class="tag${t==='와인·나이트라이프'?' wine':''}">${t}</span>`).join('')}</div>
+      <div class="tagrow">${c.themes.map(t=>`<span class="tag${t==='와인·나이트라이프'?' wine':''}">${t}</span>`).join('')}${seasonTagHtml(c.id)}</div>
     `;
     wrap.appendChild(card);
   });
@@ -1278,7 +1366,8 @@ function renderAreaRouteList(){
   const gradient = pool.map((s,i)=>`${colors[i%colors.length]} ${i*seg}deg ${(i+1)*seg}deg`).join(',');
   const legend = pool.map((s,i)=>`<span class="legendItem"><i style="background:${colors[i%colors.length]}"></i>${i+1}. ${s.name}</span>`).join('');
   body.innerHTML = `
-    <div class="tagrow" style="margin-bottom:16px;">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    <div class="tagrow" style="margin-bottom:10px;">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}${seasonTagHtml(c.id)}</div>
+    ${seasonWhyHtml(c.id)}
     <h3 style="font-size:13px;color:var(--muted);margin:0 0 10px;font-weight:700;">추천 코스 · 반나절용으로 나눴어요</h3>
     ${c.routes.map((r,i)=>{
       const spots=c.spots.slice(r.range[0], r.range[1]);

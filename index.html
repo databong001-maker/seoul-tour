@@ -138,6 +138,16 @@ button{font-family:inherit;}
 }
 .homeCourseLink:active{transform:scale(.98);}
 
+/* ---------- 홈 단순화 ---------- */
+.legendFold{margin:0 16px 10px; text-align:center;}
+.legendFold summary{font-size:12px; color:var(--muted); cursor:pointer; padding:6px; list-style:none;}
+.legendFold summary::-webkit-details-marker{display:none;}
+.legendFold summary::after{content:' ▾';}
+.legendFold[open] summary::after{content:' ▴';}
+.wheelToggle{display:block; margin:6px auto 0; padding:8px 12px; background:none; border:none; color:var(--muted); font-size:12.5px; text-decoration:underline; cursor:pointer;}
+.chipWrap{display:flex; flex-wrap:wrap; gap:7px; padding:2px 20px 12px;}
+.hintText{font-size:12.5px; color:var(--muted); text-align:center; padding:18px 20px;}
+
 /* ---------- 이달의 추천 ---------- */
 .monthCard{margin:0 20px 14px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px 4px; box-shadow:var(--shadow);}
 .monthHead{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
@@ -535,7 +545,7 @@ function switchTab(name){
   document.getElementById('tab-'+name).style.display='block';
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   if(name==='map'){ ensureKakaoMap(); }
-  if(name==='home'){ homeMode='all'; homeMonth=new Date().getMonth()+1; updateCourseCountLabels(); renderMonthCard(); renderHomePriorityChips(); dispatchHomeMode(); }
+  if(name==='home'){ homeMode='all'; wheelAllCourses=false; regionAreaSel=null; homeMonth=new Date().getMonth()+1; updateCourseCountLabels(); renderMonthCard(); renderHomePriorityChips(); dispatchHomeMode(); }
 }
 
 /* =====================================================================
@@ -1095,7 +1105,7 @@ const COURSE_SEASONS = (()=>{
   if(none.length) console.info('[월별추천] 추천 달이 없는 코스:', none);
 })();
 let homeMonth = new Date().getMonth()+1;
-function shiftHomeMonth(d){ homeMonth = ((homeMonth-1+d+12)%12)+1; renderMonthCard(); }
+function shiftHomeMonth(d){ if(flowSpinning) return; homeMonth = ((homeMonth-1+d+12)%12)+1; renderMonthCard(); if(homeMode==='all') renderAllWheel(); }
 function renderMonthCard(){
   const el=document.getElementById('homeMonthCard'); if(!el) return;
   const picks=(MONTHLY_PICKS[homeMonth]||[]).filter(p=>COURSES.some(c=>c.id===p.id));
@@ -1157,12 +1167,26 @@ function dispatchHomeMode(){
   else if(homeMode==='theme') flowPickTheme();
   else if(homeMode==='spot') flowPickSpot();
 }
+let wheelAllCourses=false;
+function monthPickCourses(m){
+  const seen=new Set(); const out=[];
+  (MONTHLY_PICKS[m]||[]).forEach(p=>{
+    const c=COURSES.find(x=>x.id===p.id);
+    if(c && !seen.has(c.id)){ seen.add(c.id); out.push(c); }
+  });
+  return out;
+}
+function toggleWheelAll(){ if(flowSpinning) return; wheelAllCourses=!wheelAllCourses; renderAllWheel(); }
 function renderAllWheel(){
+  const picks=monthPickCourses(homeMonth);
+  const useAll = wheelAllCourses || !picks.length;
+  const pool = useAll ? COURSES : picks;
   document.getElementById('homeRouletteBody').innerHTML = `
-    <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:0 0 4px;">서울 ${COURSES.length}개 코스 전체 중에서 뽑아요</p>
+    <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:0 0 4px;">${useAll ? `서울 ${COURSES.length}개 코스 전체 중에서 뽑아요` : `${homeMonth}월 추천 ${pool.length}곳 중에서 뽑아요`}</p>
     ${flowWheelHTML()}
+    ${picks.length ? `<button class="wheelToggle" onclick="toggleWheelAll()">${useAll ? `${homeMonth}월 추천으로 돌리기` : `서울 전체 ${COURSES.length}개로 돌리기`}</button>` : ''}
   `;
-  const items = COURSES.map(c=>({label:c.name, ref:c}));
+  const items = pool.map(c=>({label:c.name, ref:c}));
   setupFlowWheel(items, (winner)=> finishFlowToArea(winner.ref.id, null));
 }
 function flowWheelHTML(){
@@ -1172,7 +1196,7 @@ function flowWheelHTML(){
       <div class="rouletteWheel" id="flowWheel"></div>
       <div class="rouletteHub">🎯</div>
     </div>
-    <div class="rouletteLegend" id="flowLegend"></div>
+    <details class="legendFold" id="flowLegendFold"><summary id="flowLegendSum"></summary><div class="rouletteLegend" id="flowLegend"></div></details>
     <button class="btn spinBtn" style="background:var(--gold); max-width:280px; margin:4px auto 0;" onclick="spinFlowWheel()">🎯 룰렛 돌리기</button>
   </div>`;
 }
@@ -1185,6 +1209,11 @@ function renderFlowWheelVisual(){
   const wheel=document.getElementById('flowWheel'); const legend=document.getElementById('flowLegend');
   if(!wheel) return;
   const n=flowPool.length;
+  const fold=document.getElementById('flowLegendFold'), sum=document.getElementById('flowLegendSum');
+  if(fold && sum){
+    if(n<=8){ fold.open=true; sum.style.display='none'; }
+    else { fold.open=false; sum.style.display=''; sum.textContent=`전체 이름 목록 보기 (${n}개)`; }
+  }
   if(!n){ wheel.style.background='var(--line)'; legend.innerHTML='<span class="legendItem">선택지가 없어요</span>'; return; }
   const seg=360/n, colors=rouletteColors();
   wheel.style.transition='none';
@@ -1222,10 +1251,18 @@ function finishFlowToArea(regionId, themeLabel){
 }
 
 /* ---- 지역별: 동네를 직접 고르고 → 테마 룰렛 ---- */
-function flowPickRegion(){
+let regionAreaSel=null;
+function areaCounts(){
+  const m={}; COURSES.forEach(c=>{ m[c.area]=(m[c.area]||0)+1; });
+  return Object.entries(m).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],'ko'));
+}
+function flowPickRegion(area){
+  if(typeof area==='string') regionAreaSel=area;
+  const list = regionAreaSel ? COURSES.filter(c=>c.area===regionAreaSel) : [];
   document.getElementById('homeRouletteBody').innerHTML = `
-    <h3 class="serif" style="font-size:15.5px;margin:4px 20px 10px;">어느 동네로 갈까요?</h3>
-    ${COURSES.map(c=>`<div class="routeCard" onclick="flowRegionChosen('${c.id}')"><h3>${c.name}</h3><div class="meta">${c.area} · ${c.themes.join(', ')}</div></div>`).join('')}
+    <h3 class="serif" style="font-size:15.5px;margin:4px 20px 10px;">어느 구로 갈까요?</h3>
+    <div class="chipWrap">${areaCounts().map(([a,n])=>`<button class="chip${a===regionAreaSel?' active':''}" onclick="flowPickRegion('${a}')">${a} ${n}</button>`).join('')}</div>
+    ${regionAreaSel ? list.map(c=>`<div class="routeCard" style="margin:0 20px 10px;" onclick="flowRegionChosen('${c.id}')"><h3>${c.name}</h3><div class="meta">${c.themes.join(', ')}</div></div>`).join('') : '<p class="hintText">구를 고르면 그 동네 코스가 보여요</p>'}
   `;
 }
 function flowRegionChosen(id){

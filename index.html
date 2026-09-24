@@ -6,6 +6,10 @@
 <title>서울투어</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1B1B1B">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="서울투어">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -1940,6 +1944,11 @@ function initAppData(){
   loadBucketPlaces();
   loadFavorites();
   switchTab('home');
+}
+</script>
+<script>
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW 등록 실패',e)); });
 }
 </script>
 </body>

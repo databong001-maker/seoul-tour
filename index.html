@@ -274,7 +274,7 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
         <p class="eyebrow">TODAY'S SEOUL</p>
         <h1 class="serif">오늘 어디 갈까?</h1>
       </div>
-      <button class="homeCourseLink" onclick="goToRecommend()">📋 추천 코스 둘러보기 (14개 동네 · 8개 테마) ›</button>
+      <button class="homeCourseLink" id="homeCourseLinkBtn" onclick="goToRecommend()">📋 추천 코스 둘러보기 ›</button>
       <div class="chiprow" id="homePriorityChips" style="padding:6px 20px 4px;"></div>
       <div id="homeRouletteBody"></div>
     </div>
@@ -514,11 +514,11 @@ function switchTab(name){
   document.getElementById('tab-'+name).style.display='block';
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   if(name==='map'){ ensureKakaoMap(); }
-  if(name==='home'){ homeMode='all'; renderHomePriorityChips(); dispatchHomeMode(); }
+  if(name==='home'){ homeMode='all'; updateCourseCountLabels(); renderHomePriorityChips(); dispatchHomeMode(); }
 }
 
 /* =====================================================================
-   동네투어 코스 데이터 (curated, 36개 코스)
+   동네투어 코스 데이터 (curated)
 ===================================================================== */
 const COURSES = [
 {id:'samcheong-bukchon', name:'삼청동·북촌', type:'지역형', themes:['미술관'], area:'종로구',
@@ -1034,6 +1034,11 @@ const THEME_META = {
 };
 let activeTheme='전체';
 
+function updateCourseCountLabels(){
+  const btn=document.getElementById('homeCourseLinkBtn'); if(!btn) return;
+  const themeCount=THEMES.filter(t=>t!=='전체').length;
+  btn.textContent=`📋 추천 코스 둘러보기 (${COURSES.length}개 코스 · ${themeCount}개 테마) ›`;
+}
 function goToRecommend(){
   activeTheme='전체';
   switchTab('course'); renderThemeChips(); renderCourseList();
@@ -1062,7 +1067,7 @@ function dispatchHomeMode(){
 }
 function renderAllWheel(){
   document.getElementById('homeRouletteBody').innerHTML = `
-    <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:0 0 4px;">서울 14개 동네 전체 중에서 뽑아요</p>
+    <p style="font-size:12.5px;color:var(--muted);text-align:center;margin:0 0 4px;">서울 ${COURSES.length}개 코스 전체 중에서 뽑아요</p>
     ${flowWheelHTML()}
   `;
   const items = COURSES.map(c=>({label:c.name, ref:c}));

@@ -743,6 +743,21 @@ const COURSES = [
   {name:'성당·쇼핑 코스', range:[0,4]},
   {name:'노포·야시장 코스', range:[4,8]},
  ]},
+{id:'namdaemun-market', name:'남대문시장', type:'지역형', themes:['시장','전통·역사'], area:'중구',
+ coord:{lat:37.5590,lng:126.9773},
+ spots:[
+  {name:'회현역 5번출구', cat:'시작점'},
+  {name:'칼국수골목(한순자손칼국수)', cat:'분식', walk:'5분', note:'가볍게 한 끼, 손칼국수·냉면'},
+  {name:'갈치조림골목(넝쿨식당)', cat:'한식', walk:'5분', note:'1980년대 후반 형성, 남대문 대표 먹거리'},
+  {name:'은호식당', cat:'한식', walk:'3분', note:'30년 넘은 꼬리곰탕 노포'},
+  {name:'닭진미(구 강원집)', cat:'한식', walk:'2분', note:'닭개장 전문, 갈치조림골목 터줏대감'},
+  {name:'남대문시장 쇼핑거리', cat:'시장', walk:'5분', note:'액세서리·수입상가·아동복 등 도소매'},
+  {name:'회현역 포장마차거리', cat:'시장', walk:'5분', note:'저녁 길거리음식(우동·곱창볶음·곰장어)'},
+ ],
+ routes:[
+  {name:'노포 먹거리 코스', range:[0,5]},
+  {name:'쇼핑·야시장 코스', range:[5,7]},
+ ]},
 {id:'seosulla-gil', name:'서순라길(종묘 돌담길)', type:'지역형', themes:['전통·역사','와인·나이트라이프','핫플레이스'], area:'종로구',
  coord:{lat:37.5714,lng:126.9917},
  spots:[
@@ -1147,6 +1162,8 @@ const FOOD_REF = [
  {name:'퀸즈가드', cat:'와인', area:'서순라길', regionId:'seosulla-gil', note:'영국식 담금주·진 펍'},
  {name:'명동교자', cat:'분식', area:'명동', regionId:'myeongdong', note:'1966년 노포, 미쉐린 빕구르망, 칼국수·만두'},
  {name:'하동관', cat:'한식', area:'명동', regionId:'myeongdong', note:'미쉐린 빕구르망, 곰탕 노포'},
+ {name:'넝쿨식당', cat:'한식', area:'남대문시장', regionId:'namdaemun-market', note:'갈치조림골목 대표 맛집'},
+ {name:'은호식당', cat:'한식', area:'남대문시장', regionId:'namdaemun-market', note:'30년 넘은 꼬리곰탕 노포'},
 ];
 const FOOD_CATS = ['전체','한식','분식','양식','일식','중식','카페','와인','기타'];
 let foodSource='curated', activeFoodCat='전체';

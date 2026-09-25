@@ -274,6 +274,9 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
 .searchResult .a{font-size:11.5px; color:var(--muted);}
 .smallBtn{padding:7px 12px; border-radius:8px; border:1px solid var(--brand2); background:#fff; color:var(--brand2); font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0;}
 .rowBtns{display:flex; gap:8px; margin-top:10px;}
+.iconRowBtns{display:flex; gap:6px; flex-shrink:0;}
+.iconBtn{width:34px; height:34px; flex-shrink:0; border-radius:9px; border:1px solid var(--line); background:#fff; font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;}
+.iconBtn.home{border-color:var(--brand); background:#FFF7E0;}
 .rowBtns .btn{margin-top:0;}
 </style>
 </head>
@@ -1837,12 +1840,16 @@ function renderFavList(){
   favorites.forEach((f,i)=>{
     const card=document.createElement('div'); card.className='card';
     card.innerHTML = `
-      <h3>${f.isHome ? '⭐ ' : ''}${f.name}${f.isHome ? ' <span style="font-size:11px;color:var(--brand);font-weight:700;">· 기본 출발지</span>' : ''}</h3>
-      <div class="meta">${f.address||''}</div>
-      <div class="rowBtns">
-        <button class="btn secondary" style="flex:1;" onclick="quickRouteToFav(${f.lat},${f.lng})">🧭 길찾기</button>
-        ${f.isHome ? '' : `<button class="smallBtn" onclick="setHomeFavorite('${f.docId}')">⭐ 기본으로</button>`}
-        <button class="smallBtn" onclick="deleteFav('${f.docId}')">삭제</button>
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+        <div style="min-width:0;">
+          <h3 style="margin:0;${f.isHome?'color:var(--brand);':''}">${f.name}</h3>
+          <div class="meta" style="margin-top:2px;">${f.address||''}</div>
+        </div>
+        <div class="iconRowBtns">
+          <button class="iconBtn" title="길찾기" onclick="quickRouteToFav(${f.lat},${f.lng})">🧭</button>
+          <button class="iconBtn${f.isHome?' home':''}" title="${f.isHome?'기본 출발지':'기본 출발지로 지정'}" onclick="setHomeFavorite('${f.docId}')">${f.isHome?'⭐':'☆'}</button>
+          <button class="iconBtn" title="삭제" onclick="deleteFav('${f.docId}')">🗑</button>
+        </div>
       </div>
     `;
     wrap.appendChild(card);

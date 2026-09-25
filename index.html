@@ -162,6 +162,8 @@ button{font-family:inherit;}
 .monthPick .go{color:var(--muted); font-size:16px;}
 .tag.season{background:#E3EEDF; color:#2E6B3C;}
 .tag.season.now{background:#2E6B3C; color:#fff;}
+.tag.transit{background:#EAF1FB; color:#2A5CA8;}
+.giheungBtn{display:block; width:100%; margin:0 0 14px; padding:11px; background:#EAF1FB; color:#2A5CA8; border:1px solid #C7DBF3; border-radius:10px; font-size:13.5px; font-weight:700; text-align:center; cursor:pointer;}
 .seasonWhy{font-size:12px; color:var(--muted); line-height:1.6; margin:0 0 14px;}
 
 /* ---------- 룰렛 (일부러 튀는 색감 + 움직임) ---------- */
@@ -1373,7 +1375,7 @@ function renderCourseList(){
       <h3>${c.name}</h3>
       <div class="meta">${c.type} · ${c.area} · 스팟 ${c.spots.length}곳 · 코스 ${c.routes.length}개</div>
       <div class="desc">${c.spots.slice(0,4).map(s=>s.name).join(' → ')}${c.spots.length>4?' …':''}</div>
-      <div class="tagrow">${c.themes.map(t=>`<span class="tag${t==='와인·나이트라이프'?' wine':''}">${t}</span>`).join('')}${seasonTagHtml(c.id)}</div>
+      <div class="tagrow">${c.themes.map(t=>`<span class="tag${t==='와인·나이트라이프'?' wine':''}">${t}</span>`).join('')}${seasonTagHtml(c.id)}${transitHintHtml(c)}</div>
     `;
     wrap.appendChild(card);
   });
@@ -1415,8 +1417,9 @@ function renderAreaRouteList(){
   const gradient = pool.map((s,i)=>`${colors[i%colors.length]} ${i*seg}deg ${(i+1)*seg}deg`).join(',');
   const legend = pool.map((s,i)=>`<span class="legendItem"><i style="background:${colors[i%colors.length]}"></i>${i+1}. ${s.name}</span>`).join('');
   body.innerHTML = `
-    <div class="tagrow" style="margin-bottom:10px;">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}${seasonTagHtml(c.id)}</div>
+    <div class="tagrow" style="margin-bottom:10px;">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}${seasonTagHtml(c.id)}${transitHintHtml(c)}</div>
     ${seasonWhyHtml(c.id)}
+    <button class="giheungBtn" onclick="window.open(giheungRouteUrl(c),'_blank')">🚉 기흥역에서 가는 길찾기</button>
     <h3 style="font-size:13px;color:var(--muted);margin:0 0 10px;font-weight:700;">추천 코스 · 반나절용으로 나눴어요</h3>
     ${c.routes.map((r,i)=>{
       const spots=c.spots.slice(r.range[0], r.range[1]);
@@ -1627,6 +1630,28 @@ const FOOD_REF = [
  {name:'나폴리 키친', cat:'양식', area:'해방촌', regionId:'haebangchon', note:'숙대 앞 화덕피자·빠네, 청파로45길 29'},
 ];
 const FOOD_CATS = ['전체','한식','분식','양식','일식','중식','카페','와인','기타'];
+
+/* =====================================================================
+   기흥역 교통 (경기 용인 자택 기준, 수인분당선·광역버스로 서울 이동)
+   → 코스 상세의 '기흥역에서 가는 길찾기' 버튼과 구별 참고 배지에서 사용
+===================================================================== */
+const GIHEUNG_STATION = {lat:37.2749, lng:127.1157, name:'기흥역'};
+function giheungRouteUrl(course){
+  return `https://m.map.kakao.com/scheme/route?sp=${GIHEUNG_STATION.lat},${GIHEUNG_STATION.lng}&ep=${course.coord.lat},${course.coord.lng}&by=publictransit`;
+}
+// 구 단위 대략적인 참고용 힌트(실시간 정확한 경로는 카카오맵 길찾기 버튼이 계산함)
+const TRANSIT_HINTS = {
+  '강남구':{icon:'🚇', label:'수인분당선 직결 · 환승 적어요'},
+  '서초구':{icon:'🚇', label:'수인분당선 + 짧은 환승'},
+  '성동구':{icon:'🚇', label:'수인분당선 직결(왕십리 인근)'},
+  '송파구':{icon:'🚇', label:'수인분당선 환승 1회(선릉·강남구청 등)'},
+};
+const TRANSIT_HINT_DEFAULT = {icon:'🚌', label:'환승 필요 · 기흥역 광역버스도 고려'};
+function transitHint(course){ return TRANSIT_HINTS[course.area] || TRANSIT_HINT_DEFAULT; }
+function transitHintHtml(course){
+  const h = transitHint(course);
+  return `<span class="tag transit">${h.icon} ${h.label}</span>`;
+}
 
 /* =====================================================================
    데이터 무결성 자동 검사 (앱 로딩 시 1회, 화면엔 안 보이고 콘솔에만 경고)
@@ -1865,7 +1890,7 @@ async function getGpsCoords(){
 function populateRouteSelects(){
   ['routeFrom','routeTo'].forEach(id=>{
     const sel=document.getElementById(id);
-    sel.innerHTML = '<option value="gps">내 위치</option>';
+    sel.innerHTML = '<option value="gps">내 위치</option><option value="direct:37.2749:127.1157">🚉 기흥역</option>';
     favorites.forEach(f=>{
       const o=document.createElement('option'); o.value='fav:'+f.docId; o.textContent=f.name;
       sel.appendChild(o);

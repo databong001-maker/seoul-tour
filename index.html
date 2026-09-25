@@ -348,7 +348,7 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
     <!-- 교통 탭 -->
     <div class="tabcontent" id="tab-transit" style="display:none;">
       <div class="section"><h2>귀가거점 즐겨찾기</h2>
-        <p style="font-size:12.5px;color:var(--muted);margin:-4px 0 4px;">자주 가는 귀가·출발 거점을 등록해두면, 현재 위치에서 그곳까지 바로 길찾기할 수 있어요.</p>
+        <p style="font-size:12.5px;color:var(--muted);margin:-4px 0 4px;">자주 가는 곳을 직접 추가해보세요. 별표를 누르면 그 즐겨찾기가 코스 상세·교통 배지의 기본 출발지가 돼요.</p>
       </div>
       <div id="favList"></div>
       <div style="padding:0 16px 20px;">
@@ -1632,48 +1632,43 @@ const FOOD_REF = [
 const FOOD_CATS = ['전체','한식','분식','양식','일식','중식','카페','와인','기타'];
 
 /* =====================================================================
-   기흥역 교통 (경기 용인 자택 기준, 수인분당선·광역버스로 서울 이동)
-   → 코스 상세의 '기흥역에서 가는 길찾기' 버튼과 구별 참고 배지에서 사용
+   사용자 생활권(기본 출발지) 관리
+   → 즐겨찾기 중 하나를 ⭐ 기본 출발지로 지정할 수 있음(강남역이든 기흥역이든 자유롭게)
+   → 코스 상세 길찾기의 드롭다운, 교통 참고 배지가 모두 이 기본 출발지를 기준으로 계산됨
 ===================================================================== */
-const GIHEUNG_STATION = {lat:37.2749, lng:127.1157, name:'기흥역'};
-// 앱 첫 로딩 때 즐겨찾기에 기흥역이 없으면 한 번만 자동으로 추가(중복 방지 위해 이름으로 확인)
-// 앱 첫 로딩 때 없는 것만 골라 자동으로 한 번씩 추가(중복 방지 위해 이름으로 확인)
-const DEFAULT_FAVORITES = [
-  {name:'기흥역', address:'수인분당선 기흥역 (경기 용인)', lat:GIHEUNG_STATION.lat, lng:GIHEUNG_STATION.lng},
-  {name:'세종문화회관', address:'서울 종로구 세종대로 175, 기흥역행 광역버스 승차', lat:37.5719, lng:126.9757},
-  {name:'서울역', address:'기흥역행 광역버스·수인분당선 환승', lat:37.5547, lng:126.9707},
-];
-async function ensureDefaultFavorites(){
+function getHomeBase(){
+  const home = favorites.find(f=>f.isHome);
+  return home ? {lat:home.lat, lng:home.lng, name:home.name} : null; // 아직 지정 안 했으면 아무것도 가정하지 않음
+}
+async function setHomeFavorite(docId){
   if(!db) return;
-  const missing = DEFAULT_FAVORITES.filter(d => !favorites.some(f=>f.name===d.name));
-  if(!missing.length) return;
   try{
-    for(const d of missing){
-      await db.collection('seoul_favorites').add({
-        name:d.name, address:d.address, lat:d.lat, lng:d.lng,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }
+    const others = favorites.filter(f=>f.isHome && f.docId!==docId);
+    await Promise.all(others.map(f=>db.collection('seoul_favorites').doc(f.docId).update({isHome:false})));
+    await db.collection('seoul_favorites').doc(docId).update({isHome:true});
     await loadFavorites();
-  }catch(e){ console.error('기본 즐겨찾기 자동 추가 실패', e); }
+  }catch(e){ console.error('기본 출발지 설정 실패', e); }
 }
-function giheungRouteUrl(course){
-  return `https://m.map.kakao.com/scheme/route?sp=${GIHEUNG_STATION.lat},${GIHEUNG_STATION.lng}&ep=${course.coord.lat},${course.coord.lng}&by=publictransit`;
+// 기본 출발지 ↔ 코스 사이 대략적인 직선거리로 참고용 교통 배지를 계산(특정 노선을 단정하지 않음)
+function haversineKm(a,b){
+  const R=6371, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng);
+  const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
 }
-// 구 단위 대략적인 참고용 힌트(실시간 정확한 경로는 카카오맵 길찾기 버튼이 계산함)
-const TRANSIT_HINTS = {
-  '강남구':{icon:'🚇', label:'수인분당선 직결 · 환승 적어요'},
-  '서초구':{icon:'🚇', label:'수인분당선 + 짧은 환승'},
-  '성동구':{icon:'🚇', label:'수인분당선 직결(왕십리 인근)'},
-  '송파구':{icon:'🚇', label:'수인분당선 환승 1회(선릉·강남구청 등)'},
-};
-const TRANSIT_HINT_DEFAULT = {icon:'🚌', label:'환승 필요 · 기흥역 광역버스도 고려'};
-function transitHint(course){ return TRANSIT_HINTS[course.area] || TRANSIT_HINT_DEFAULT; }
+function transitHint(course){
+  const home = getHomeBase();
+  if(!home) return null; // 기본 출발지를 지정하기 전엔 아무 것도 단정하지 않음
+  const km = haversineKm(home, course.coord);
+  if(km <= 6)  return {icon:'🚶', label:`${home.name} 기준 가까운 거리`};
+  if(km <= 18) return {icon:'🚇', label:`${home.name} 기준 지하철권`};
+  if(km <= 32) return {icon:'🚌', label:`${home.name} 기준 환승 필요`};
+  return {icon:'🚄', label:`${home.name} 기준 장거리`};
+}
 function transitHintHtml(course){
   const h = transitHint(course);
-  return `<span class="tag transit">${h.icon} ${h.label}</span>`;
+  return h ? `<span class="tag transit">${h.icon} ${h.label}</span>` : '';
 }
-
 /* =====================================================================
    데이터 무결성 자동 검사 (앱 로딩 시 1회, 화면엔 안 보이고 콘솔에만 경고)
    → 코스를 추가/수정할 때 실수를 바로 잡기 위한 용도
@@ -1842,10 +1837,11 @@ function renderFavList(){
   favorites.forEach((f,i)=>{
     const card=document.createElement('div'); card.className='card';
     card.innerHTML = `
-      <h3>${f.name}</h3>
+      <h3>${f.isHome ? '⭐ ' : ''}${f.name}${f.isHome ? ' <span style="font-size:11px;color:var(--brand);font-weight:700;">· 기본 출발지</span>' : ''}</h3>
       <div class="meta">${f.address||''}</div>
       <div class="rowBtns">
-        <button class="btn secondary" style="flex:1;" onclick="openRouteSheetTo(${f.lat},${f.lng},'${f.name.replace(/'/g,"")}')">여기로 길찾기</button>
+        <button class="btn secondary" style="flex:1;" onclick="quickRouteToFav(${f.lat},${f.lng})">🧭 길찾기</button>
+        ${f.isHome ? '' : `<button class="smallBtn" onclick="setHomeFavorite('${f.docId}')">⭐ 기본으로</button>`}
         <button class="smallBtn" onclick="deleteFav('${f.docId}')">삭제</button>
       </div>
     `;
@@ -1911,7 +1907,8 @@ async function getGpsCoords(){
 function populateRouteSelects(){
   ['routeFrom','routeTo'].forEach(id=>{
     const sel=document.getElementById(id);
-    sel.innerHTML = '<option value="gps">내 위치</option><option value="direct:37.2749:127.1157">🚉 기흥역</option>';
+    const home = getHomeBase();
+    sel.innerHTML = '<option value="gps">내 위치</option>' + (home ? `<option value="direct:${home.lat}:${home.lng}">🏠 ${home.name}</option>` : '');
     favorites.forEach(f=>{
       const o=document.createElement('option'); o.value='fav:'+f.docId; o.textContent=f.name;
       sel.appendChild(o);
@@ -1945,6 +1942,13 @@ async function resolveRoutePoint(val){
     return {lat:parseFloat(lat), lng:parseFloat(lng), name:'선택한 장소'};
   }
   return null;
+}
+// 즐겨찾기 카드용: 바텀시트 없이 바로 '내 위치 → 즐겨찾기' 대중교통 길찾기를 엶
+async function quickRouteToFav(lat, lng){
+  const from = await resolveRoutePoint('gps');
+  if(!from){ alert('현재 위치를 확인하지 못했어요. 위치 권한을 확인해주세요.'); return; }
+  const url = `https://m.map.kakao.com/scheme/route?sp=${from.lat},${from.lng}&ep=${lat},${lng}&by=publictransit`;
+  window.open(url, '_blank');
 }
 async function launchRoute(){
   const fromVal=document.getElementById('routeFrom').value;
@@ -2068,7 +2072,7 @@ function initAppData(){
   renderThemeChips(); renderCourseList();
   renderFoodCatChips(); renderFoodList();
   loadBucketPlaces();
-  loadFavorites().then(ensureDefaultFavorites);
+  loadFavorites();
   switchTab('home');
 }
 </script>

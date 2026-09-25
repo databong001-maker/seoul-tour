@@ -1637,17 +1637,25 @@ const FOOD_CATS = ['전체','한식','분식','양식','일식','중식','카페
 ===================================================================== */
 const GIHEUNG_STATION = {lat:37.2749, lng:127.1157, name:'기흥역'};
 // 앱 첫 로딩 때 즐겨찾기에 기흥역이 없으면 한 번만 자동으로 추가(중복 방지 위해 이름으로 확인)
-async function ensureGiheungFavorite(){
+// 앱 첫 로딩 때 없는 것만 골라 자동으로 한 번씩 추가(중복 방지 위해 이름으로 확인)
+const DEFAULT_FAVORITES = [
+  {name:'기흥역', address:'수인분당선 기흥역 (경기 용인)', lat:GIHEUNG_STATION.lat, lng:GIHEUNG_STATION.lng},
+  {name:'세종문화회관', address:'서울 종로구 세종대로 175, 기흥역행 광역버스 승차', lat:37.5719, lng:126.9757},
+  {name:'서울역', address:'기흥역행 광역버스·수인분당선 환승', lat:37.5547, lng:126.9707},
+];
+async function ensureDefaultFavorites(){
   if(!db) return;
-  if(favorites.some(f=>f.name==='기흥역')) return;
+  const missing = DEFAULT_FAVORITES.filter(d => !favorites.some(f=>f.name===d.name));
+  if(!missing.length) return;
   try{
-    await db.collection('seoul_favorites').add({
-      name:'기흥역', address:'수인분당선 기흥역 (경기 용인)',
-      lat:GIHEUNG_STATION.lat, lng:GIHEUNG_STATION.lng,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    for(const d of missing){
+      await db.collection('seoul_favorites').add({
+        name:d.name, address:d.address, lat:d.lat, lng:d.lng,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
     await loadFavorites();
-  }catch(e){ console.error('기흥역 즐겨찾기 자동 추가 실패', e); }
+  }catch(e){ console.error('기본 즐겨찾기 자동 추가 실패', e); }
 }
 function giheungRouteUrl(course){
   return `https://m.map.kakao.com/scheme/route?sp=${GIHEUNG_STATION.lat},${GIHEUNG_STATION.lng}&ep=${course.coord.lat},${course.coord.lng}&by=publictransit`;
@@ -2060,7 +2068,7 @@ function initAppData(){
   renderThemeChips(); renderCourseList();
   renderFoodCatChips(); renderFoodList();
   loadBucketPlaces();
-  loadFavorites().then(ensureGiheungFavorite);
+  loadFavorites().then(ensureDefaultFavorites);
   switchTab('home');
 }
 </script>

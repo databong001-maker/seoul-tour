@@ -1419,7 +1419,7 @@ function renderAreaRouteList(){
   body.innerHTML = `
     <div class="tagrow" style="margin-bottom:10px;">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}${seasonTagHtml(c.id)}${transitHintHtml(c)}</div>
     ${seasonWhyHtml(c.id)}
-    <button class="giheungBtn" onclick="window.open(giheungRouteUrl(c),'_blank')">🚉 기흥역에서 가는 길찾기</button>
+    <button class="giheungBtn" onclick="window.open(giheungRouteUrl(currentArea),'_blank')">🚉 기흥역에서 가는 길찾기</button>
     <h3 style="font-size:13px;color:var(--muted);margin:0 0 10px;font-weight:700;">추천 코스 · 반나절용으로 나눴어요</h3>
     ${c.routes.map((r,i)=>{
       const spots=c.spots.slice(r.range[0], r.range[1]);

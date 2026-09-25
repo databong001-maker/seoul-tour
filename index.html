@@ -131,13 +131,6 @@ button{font-family:inherit;}
 .menuTile .sub{font-size:11px; color:var(--muted);}
 .homeDivider{margin:6px 20px 0; border:none; border-top:1px solid var(--line);}
 .homeFoot{padding:18px 20px 32px; font-size:12px; color:var(--muted); text-align:center;}
-.homeCourseLink{
-  display:block; width:calc(100% - 40px); margin:2px 20px 14px; padding:13px 16px;
-  border-radius:12px; background:#fff; border:1px solid var(--line);
-  font-size:13.5px; font-weight:700; color:var(--ink); text-align:left; cursor:pointer;
-}
-.homeCourseLink:active{transform:scale(.98);}
-
 /* ---------- 홈 단순화 ---------- */
 .legendFold{margin:0 16px 10px; text-align:center;}
 .legendFold summary{font-size:12px; color:var(--muted); cursor:pointer; padding:6px; list-style:none;}
@@ -310,7 +303,6 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
         <h1 class="serif">오늘 어디 갈까?</h1>
       </div>
       <div id="homeMonthCard"></div>
-      <button class="homeCourseLink" id="homeCourseLinkBtn" onclick="goToRecommend()">📋 추천 코스 둘러보기 ›</button>
       <div class="chiprow" id="homePriorityChips" style="padding:6px 20px 4px;"></div>
       <div id="homeRouletteBody"></div>
     </div>
@@ -338,24 +330,24 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
       <div class="section" style="padding-bottom:0;">
         <div class="chiprow" style="padding-left:0;padding-right:0;">
           <button class="chip active" id="foodSrcCurated" onclick="setFoodSource('curated')">참조리스트</button>
-          <button class="chip" id="foodSrcBucket" onclick="setFoodSource('bucket')">내 버킷리스트</button>
+          <button class="chip" id="foodSrcBucket" onclick="setFoodSource('bucket')">내가 찜한 목적지</button>
         </div>
       </div>
       <div class="chiprow" id="foodCatChips"></div>
       <div id="foodList"></div>
       <div style="padding:0 16px 20px;">
-        <button class="btn" onclick="openAddPlaceSheet()">+ 버킷리스트에 장소 추가</button>
+        <button class="btn" onclick="openAddPlaceSheet()">+ 가보고 싶은 곳 추가</button>
       </div>
     </div>
 
     <!-- 교통 탭 -->
     <div class="tabcontent" id="tab-transit" style="display:none;">
-      <div class="section"><h2>귀가거점 즐겨찾기</h2>
-        <p style="font-size:12.5px;color:var(--muted);margin:-4px 0 4px;">자주 가는 곳을 직접 추가해보세요. 별표를 누르면 그 즐겨찾기가 코스 상세·교통 배지의 기본 출발지가 돼요.</p>
+      <div class="section"><h2>교통 거점</h2>
+        <p style="font-size:12.5px;color:var(--muted);margin:-4px 0 4px;">타고 다니는 역·정류장을 등록해두는 곳이에요. 별표를 누르면 그 거점이 코스 상세·교통 배지의 기본 출발지가 돼요.</p>
       </div>
       <div id="favList"></div>
       <div style="padding:0 16px 20px;">
-        <button class="btn secondary" onclick="openAddFavSheet()">+ 즐겨찾기 추가</button>
+        <button class="btn secondary" onclick="openAddFavSheet()">+ 교통 거점 추가</button>
       </div>
     </div>
 
@@ -393,7 +385,7 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
   <div class="sheet" style="position:relative;">
     <button class="close" onclick="closeSheet('addPlaceOverlay')">✕</button>
     <div class="handle"></div>
-    <h2>버킷리스트에 장소 추가</h2>
+    <h2>가보고 싶은 곳 추가</h2>
     <div class="formGrid">
       <input id="placeSearchInput" type="text" placeholder="가게 이름으로 검색 (예: OO식당)" style="padding:11px;border:1px solid var(--line);border-radius:10px;font-size:14px;">
       <button class="smallBtn" style="align-self:flex-start;" onclick="searchPlaceForAdd()">검색</button>
@@ -423,7 +415,7 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
       <label style="font-size:12.5px;color:var(--muted);">어느 동네투어 권역인가요? (룰렛에 포함돼요)</label>
       <select id="pickCategoryRegion"><option value="">선택 안 함</option></select>
       <textarea id="pickCategoryMemo" placeholder="메모 (추천메뉴, 느낌 등 — 선택)"></textarea>
-      <button class="btn" onclick="confirmAddPlace()">버킷리스트에 저장</button>
+      <button class="btn" onclick="confirmAddPlace()">찜한 곳에 저장</button>
     </div>
   </div>
 </div>
@@ -433,9 +425,9 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
   <div class="sheet" style="position:relative;">
     <button class="close" onclick="closeSheet('addFavOverlay')">✕</button>
     <div class="handle"></div>
-    <h2>즐겨찾기 추가</h2>
+    <h2>교통 거점 추가</h2>
     <div class="formGrid">
-      <input id="favSearchInput" type="text" placeholder="장소 검색 (예: 세종문화회관)" style="padding:11px;border:1px solid var(--line);border-radius:10px;font-size:14px;">
+      <input id="favSearchInput" type="text" placeholder="역·정류장 검색 (예: 강남역)" style="padding:11px;border:1px solid var(--line);border-radius:10px;font-size:14px;">
       <button class="smallBtn" style="align-self:flex-start;" onclick="searchFavForAdd()">검색</button>
       <div id="favSearchResults"></div>
     </div>
@@ -550,7 +542,7 @@ function switchTab(name){
   document.getElementById('tab-'+name).style.display='block';
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   if(name==='map'){ ensureKakaoMap(); }
-  if(name==='home'){ homeMode='all'; wheelAllCourses=false; regionAreaSel=null; homeMonth=new Date().getMonth()+1; updateCourseCountLabels(); renderMonthCard(); renderHomePriorityChips(); dispatchHomeMode(); }
+  if(name==='home'){ homeMode='all'; wheelAllCourses=false; regionAreaSel=null; homeMonth=new Date().getMonth()+1; renderMonthCard(); renderHomePriorityChips(); dispatchHomeMode(); }
 }
 
 /* =====================================================================
@@ -1149,16 +1141,6 @@ function seasonWhyHtml(id){
   if(any) lines.push(`☔ ${any.why}`);
   return lines.length ? `<p class="seasonWhy">${lines.join('<br>')}</p>` : '';
 }
-function updateCourseCountLabels(){
-  const btn=document.getElementById('homeCourseLinkBtn'); if(!btn) return;
-  const themeCount=THEMES.filter(t=>t!=='전체').length;
-  btn.textContent=`📋 추천 코스 둘러보기 (${COURSES.length}개 코스 · ${themeCount}개 테마) ›`;
-}
-function goToRecommend(){
-  activeTheme='전체';
-  switchTab('course'); renderThemeChips(); renderCourseList();
-}
-
 /* =====================================================================
    홈 룰렛: 전체 / 지역별 / 테마별 / 장소별 우선선택 → 룰렛 → 동네 상세
 ===================================================================== */
@@ -1280,13 +1262,7 @@ function flowPickRegion(area){
 }
 function flowRegionChosen(id){
   const area = COURSES.find(c=>c.id===id); if(!area) return;
-  document.getElementById('homeRouletteBody').innerHTML = `
-    <button class="backLink" style="margin-left:20px;" onclick="flowPickRegion()">‹ 다른 동네 고르기</button>
-    <h3 class="serif" style="font-size:15.5px;margin:4px 20px 6px;">${area.name}에서 뭘 할까요?</h3>
-    ${flowWheelHTML()}
-  `;
-  const items = THEMES.filter(t=>t!=='전체').map(t=>({label:t}));
-  setupFlowWheel(items, (winner)=> finishFlowToArea(area.id, winner.label));
+  finishFlowToArea(area.id, null); // 이미 동네를 직접 골랐으므로 추가 룰렛 없이 바로 상세로
 }
 
 /* ---- 테마별: 테마를 직접 고르고 → 동네 룰렛 ---- */
@@ -1433,7 +1409,7 @@ function renderAreaRouteList(){
       </div>`;
     }).join('')}
     <div class="rouletteWrap">
-      <h3>🎡 룰렛으로 오늘의 코스 뽑기 — ${c.name} 안 맛집·버킷리스트까지 포함해서 ${n}곳 중에서 돌아가요</h3>
+      <h3>🎡 룰렛으로 오늘의 코스 뽑기 — ${c.name} 안 맛집·찜한 곳까지 포함해서 ${n}곳 중에서 돌아가요</h3>
       <div class="rouletteStage">
         <div class="roulettePointer"></div>
         <div class="rouletteWheel" id="rouletteWheel" style="background:conic-gradient(${gradient}); transform:rotate(${rouletteRotation}deg);"></div>
@@ -1727,7 +1703,7 @@ function renderFoodList(){
   let list = foodSource==='curated' ? FOOD_REF : bucketPlaces;
   if(activeFoodCat!=='전체') list = list.filter(p=>p.cat===activeFoodCat);
   if(!list.length){
-    wrap.innerHTML = `<div class="empty">${foodSource==='curated' ? '이 카테고리의 참조 장소가 아직 없어요.' : '아직 버킷리스트에 담긴 곳이 없어요. 아래 버튼으로 추가해보세요.'}</div>`;
+    wrap.innerHTML = `<div class="empty">${foodSource==='curated' ? '이 카테고리의 참조 장소가 아직 없어요.' : '아직 찜한 곳이 없어요. 아래 버튼으로 추가해보세요.'}</div>`;
     return;
   }
   list.forEach((p,i)=>{
@@ -1831,12 +1807,12 @@ async function loadBucketPlaces(){
 }
 
 /* =====================================================================
-   교통 — 즐겨찾기(귀가거점) + 길찾기 딥링크
+   교통 — 교통 거점(자주 타는 역·정류장) + 길찾기 딥링크
 ===================================================================== */
 let favorites=[];
 function renderFavList(){
   const wrap=document.getElementById('favList'); wrap.innerHTML='';
-  if(!favorites.length){ wrap.innerHTML='<div class="empty">아직 등록된 즐겨찾기가 없어요.</div>'; return; }
+  if(!favorites.length){ wrap.innerHTML='<div class="empty">아직 등록된 교통 거점이 없어요.</div>'; return; }
   favorites.forEach((f,i)=>{
     const card=document.createElement('div'); card.className='card';
     card.innerHTML = `
@@ -1972,7 +1948,7 @@ async function launchRoute(){
    지도
 ===================================================================== */
 let kakaoMap=null;
-const MAP_CATS = ['전체','동네투어','맛집·와인','즐겨찾기'];
+const MAP_CATS = ['전체','동네투어','맛집·와인','교통 거점'];
 let activeMapCat='전체';
 function renderMapFilterChips(){
   const wrap=document.getElementById('mapFilterChips'); wrap.innerHTML='';
@@ -2054,7 +2030,7 @@ function renderMapMarkers(){
     bucketPlaces.forEach(p=>{ if(p.lat) addMarker(p.lat, p.lng, p.name, p.cat==='와인'?'🍷':'🍽️'); });
     FOOD_REF.forEach(p=>{ if(p.lat) addMarker(p.lat, p.lng, p.name, p.cat==='와인'?'🍷':'🍽️'); });
   }
-  if(activeMapCat==='전체' || activeMapCat==='즐겨찾기'){
+  if(activeMapCat==='전체' || activeMapCat==='교통 거점'){
     favorites.forEach(f=> addMarker(f.lat, f.lng, f.name, '⭐'));
   }
   /* 오늘의 룰렛 코스는 필터와 상관없이 항상 별도 아이콘으로 표시 */

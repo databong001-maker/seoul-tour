@@ -1419,7 +1419,7 @@ function renderAreaRouteList(){
   body.innerHTML = `
     <div class="tagrow" style="margin-bottom:10px;">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}${seasonTagHtml(c.id)}${transitHintHtml(c)}</div>
     ${seasonWhyHtml(c.id)}
-    <button class="giheungBtn" onclick="window.open(giheungRouteUrl(currentArea),'_blank')">🚉 기흥역에서 가는 길찾기</button>
+    <button class="giheungBtn" onclick="openRouteSheetTo(currentArea.coord.lat, currentArea.coord.lng, currentArea.name)">🧭 여기로 길찾기 (출발지 선택)</button>
     <h3 style="font-size:13px;color:var(--muted);margin:0 0 10px;font-weight:700;">추천 코스 · 반나절용으로 나눴어요</h3>
     ${c.routes.map((r,i)=>{
       const spots=c.spots.slice(r.range[0], r.range[1]);
@@ -1636,6 +1636,19 @@ const FOOD_CATS = ['전체','한식','분식','양식','일식','중식','카페
    → 코스 상세의 '기흥역에서 가는 길찾기' 버튼과 구별 참고 배지에서 사용
 ===================================================================== */
 const GIHEUNG_STATION = {lat:37.2749, lng:127.1157, name:'기흥역'};
+// 앱 첫 로딩 때 즐겨찾기에 기흥역이 없으면 한 번만 자동으로 추가(중복 방지 위해 이름으로 확인)
+async function ensureGiheungFavorite(){
+  if(!db) return;
+  if(favorites.some(f=>f.name==='기흥역')) return;
+  try{
+    await db.collection('seoul_favorites').add({
+      name:'기흥역', address:'수인분당선 기흥역 (경기 용인)',
+      lat:GIHEUNG_STATION.lat, lng:GIHEUNG_STATION.lng,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await loadFavorites();
+  }catch(e){ console.error('기흥역 즐겨찾기 자동 추가 실패', e); }
+}
 function giheungRouteUrl(course){
   return `https://m.map.kakao.com/scheme/route?sp=${GIHEUNG_STATION.lat},${GIHEUNG_STATION.lng}&ep=${course.coord.lat},${course.coord.lng}&by=publictransit`;
 }
@@ -2047,7 +2060,7 @@ function initAppData(){
   renderThemeChips(); renderCourseList();
   renderFoodCatChips(); renderFoodList();
   loadBucketPlaces();
-  loadFavorites();
+  loadFavorites().then(ensureGiheungFavorite);
   switchTab('home');
 }
 </script>

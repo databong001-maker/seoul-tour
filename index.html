@@ -1074,38 +1074,6 @@ const THEME_META = {
 let activeTheme='전체';
 
 /* =====================================================================
-   데이터 무결성 자동 검사 (앱 로딩 시 1회, 화면엔 안 보이고 콘솔에만 경고)
-   → 코스를 추가/수정할 때 실수를 바로 잡기 위한 용도
-===================================================================== */
-(function validateAppData(){
-  const warns = [];
-  const themeNames = THEMES.filter(t => t !== '전체');
-
-  // 1) 코스 themes 오타 체크
-  COURSES.forEach(c=>{
-    (c.themes||[]).forEach(t=>{
-      if(!themeNames.includes(t)) warns.push(`테마 오타: '${c.id}' 코스의 '${t}'가 THEMES에 없음`);
-    });
-  });
-
-  // 2) FOOD_REF의 regionId가 실제 코스 ID인지 체크
-  const courseIds = new Set(COURSES.map(c=>c.id));
-  (typeof FOOD_REF !== 'undefined' ? FOOD_REF : []).forEach(f=>{
-    if(f.regionId && !courseIds.has(f.regionId)) warns.push(`맛집 지역ID 불일치: '${f.name}'의 regionId '${f.regionId}'가 COURSES에 없음`);
-  });
-
-  // 3) THEMES에 있는데 THEME_META에 아이콘/설명이 없는 테마 체크
-  themeNames.forEach(t=>{
-    if(!THEME_META[t]) warns.push(`테마 메타 누락: '${t}'가 THEME_META에 없어 기본 아이콘으로 표시됨`);
-  });
-
-  if(warns.length){
-    console.warn(`[데이터 검사] ${warns.length}건 발견`);
-    warns.forEach(w=>console.warn(' - '+w));
-  }
-})();
-
-/* =====================================================================
    월별 추천: 코스 ID로만 연결 (이름·테마 등은 COURSES에서 읽음)
    → 새 코스를 만들면 여기에 id + 한 줄 이유만 추가하면 홈 카드·배지가 자동 반영
 ===================================================================== */
@@ -1659,6 +1627,38 @@ const FOOD_REF = [
  {name:'나폴리 키친', cat:'양식', area:'해방촌', regionId:'haebangchon', note:'숙대 앞 화덕피자·빠네, 청파로45길 29'},
 ];
 const FOOD_CATS = ['전체','한식','분식','양식','일식','중식','카페','와인','기타'];
+
+/* =====================================================================
+   데이터 무결성 자동 검사 (앱 로딩 시 1회, 화면엔 안 보이고 콘솔에만 경고)
+   → 코스를 추가/수정할 때 실수를 바로 잡기 위한 용도
+===================================================================== */
+(function validateAppData(){
+  const warns = [];
+  const themeNames = THEMES.filter(t => t !== '전체');
+
+  // 1) 코스 themes 오타 체크
+  COURSES.forEach(c=>{
+    (c.themes||[]).forEach(t=>{
+      if(!themeNames.includes(t)) warns.push(`테마 오타: '${c.id}' 코스의 '${t}'가 THEMES에 없음`);
+    });
+  });
+
+  // 2) FOOD_REF의 regionId가 실제 코스 ID인지 체크
+  const courseIds = new Set(COURSES.map(c=>c.id));
+  (typeof FOOD_REF !== 'undefined' ? FOOD_REF : []).forEach(f=>{
+    if(f.regionId && !courseIds.has(f.regionId)) warns.push(`맛집 지역ID 불일치: '${f.name}'의 regionId '${f.regionId}'가 COURSES에 없음`);
+  });
+
+  // 3) THEMES에 있는데 THEME_META에 아이콘/설명이 없는 테마 체크
+  themeNames.forEach(t=>{
+    if(!THEME_META[t]) warns.push(`테마 메타 누락: '${t}'가 THEME_META에 없어 기본 아이콘으로 표시됨`);
+  });
+
+  if(warns.length){
+    console.warn(`[데이터 검사] ${warns.length}건 발견`);
+    warns.forEach(w=>console.warn(' - '+w));
+  }
+})();
 let foodSource='curated', activeFoodCat='전체';
 let bucketPlaces=[]; // Firestore에서 로드
 

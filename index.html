@@ -110,6 +110,10 @@ button{font-family:inherit;}
 .tag{font-size:10.5px; padding:3.5px 9px; border-radius:7px; background:#F1ECDF; color:var(--brand2); font-weight:600; letter-spacing:.1px;}
 .tag.wine{background:#F3E4E0; color:var(--brand);}
 .empty{padding:40px 16px; text-align:center; color:var(--muted); font-size:13.5px;}
+.doseongIntro{margin:0 16px 14px; padding:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);}
+.doseongIntro p{font-size:12.5px; color:#5C574C; line-height:1.55; margin:0 0 10px;}
+.doseongMapSvg{display:block; margin:0 auto;}
+.doseongNext{font-size:11.5px; color:var(--brand2); margin-top:8px; padding-top:8px; border-top:1px dashed var(--line);}
 
 /* ---------- 홈 ---------- */
 .homeHero{padding:28px 20px 18px;}
@@ -321,8 +325,8 @@ textarea{width:100%; padding:11px; border:1px solid var(--line); border-radius:1
     <!-- 동네투어 탭 -->
     <div class="tabcontent" id="tab-course" style="display:none;">
       <div class="section"><h2>동네투어</h2></div>
-      <div class="chiprow" id="themeChips"></div>
-      <div id="courseList"></div>
+      <div class="chiprow" id="courseSubTabChips"></div>
+      <div id="courseSubBody"></div>
     </div>
 
     <!-- 맛집·와인 탭 -->
@@ -1069,6 +1073,8 @@ const THEME_META = {
   '기타':{icon:'🗂️', color:'var(--muted)', sub:'전체 둘러보기'},
 };
 let activeTheme='전체';
+let courseSubTab='region';
+const DOSEONG_ORDER = ['doseong-baegak','doseong-naksan','doseong-namsan','doseong-inwang'];
 
 /* =====================================================================
    월별 추천: 코스 ID로만 연결 (이름·테마 등은 COURSES에서 읽음)
@@ -1332,19 +1338,42 @@ function flowSpotChosen(regionId, name){
   setupFlowWheel(items, (winner)=> finishFlowToArea(regionId, winner.label));
 }
 
+function renderCourseSubTabs(){
+  const wrap=document.getElementById('courseSubTabChips'); wrap.innerHTML='';
+  [['region','동네 코스'],['doseong','🏯 도성투어']].forEach(([key,label])=>{
+    const b=document.createElement('button');
+    b.className='chip'+(key===courseSubTab?' active':'');
+    b.textContent=label;
+    b.onclick=()=>{ courseSubTab=key; renderCourseBody(); };
+    wrap.appendChild(b);
+  });
+}
+function renderCourseBody(){
+  renderCourseSubTabs();
+  if(courseSubTab==='doseong') renderDoseongSection();
+  else renderNeighborhoodCourses();
+}
 function renderThemeChips(){
-  const wrap=document.getElementById('themeChips'); wrap.innerHTML='';
+  // 동네 코스 서브탭 안의 테마 칩 (도성투어엔 표시하지 않음)
+  const body=document.getElementById('courseSubBody');
+  const chipWrap=document.getElementById('themeChips');
+  if(!chipWrap) return;
+  chipWrap.innerHTML='';
   THEMES.forEach(t=>{
     const b=document.createElement('button');
     b.className='chip'+(t===activeTheme?' active':'');
     b.textContent=t;
-    b.onclick=()=>{ activeTheme=(t==='기타')?'전체':t; renderThemeChips(); renderCourseList(); };
-    wrap.appendChild(b);
+    b.onclick=()=>{ activeTheme=(t==='기타')?'전체':t; renderNeighborhoodCourses(); };
+    chipWrap.appendChild(b);
   });
 }
-function renderCourseList(){
-  const wrap=document.getElementById('courseList'); wrap.innerHTML='';
-  const list = activeTheme==='전체' ? COURSES : COURSES.filter(c=>c.themes.includes(activeTheme));
+function renderNeighborhoodCourses(){
+  const body=document.getElementById('courseSubBody');
+  body.innerHTML = `<div class="chiprow" id="themeChips" style="padding-left:16px;"></div><div id="courseList"></div>`;
+  renderThemeChips();
+  const wrap=document.getElementById('courseList');
+  const regionCourses = COURSES.filter(c=>c.type!=='루트형');
+  const list = activeTheme==='전체' ? regionCourses : regionCourses.filter(c=>c.themes.includes(activeTheme));
   if(!list.length){ wrap.innerHTML='<div class="empty">이 테마의 코스가 아직 없어요.</div>'; return; }
   list.forEach(c=>{
     const card=document.createElement('div'); card.className='card';
@@ -1355,6 +1384,50 @@ function renderCourseList(){
       <div class="meta">${c.type} · ${c.area} · 스팟 ${c.spots.length}곳 · 코스 ${c.routes.length}개</div>
       <div class="desc">${c.spots.slice(0,4).map(s=>s.name).join(' → ')}${c.spots.length>4?' …':''}</div>
       <div class="tagrow">${c.themes.map(t=>`<span class="tag${t==='와인·나이트라이프'?' wine':''}">${t}</span>`).join('')}${seasonTagHtml(c.id)}${transitHintHtml(c)}</div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+function doseongMapSvg(){
+  const quads = [
+    {id:'doseong-baegak', label:'백악', color:'#7A5195', path:'M100,100 L43.43,43.43 A80,80 0 0,1 156.57,43.43 Z', lx:100, ly:52},
+    {id:'doseong-naksan', label:'낙산', color:'#2E933C', path:'M100,100 L156.57,43.43 A80,80 0 0,1 156.57,156.57 Z', lx:148, ly:100},
+    {id:'doseong-namsan', label:'남산', color:'#E4572E', path:'M100,100 L156.57,156.57 A80,80 0 0,1 43.43,156.57 Z', lx:100, ly:148},
+    {id:'doseong-inwang', label:'인왕', color:'#3F88C5', path:'M100,100 L43.43,156.57 A80,80 0 0,1 43.43,43.43 Z', lx:52, ly:100},
+  ];
+  const gates = [
+    {label:'창의문', x:43.43, y:43.43, dx:-6, dy:-8, anchor:'end'},
+    {label:'혜화문', x:156.57, y:43.43, dx:6, dy:-8, anchor:'start'},
+    {label:'흥인지문', x:156.57, y:156.57, dx:6, dy:16, anchor:'start'},
+    {label:'숭례문', x:43.43, y:156.57, dx:-6, dy:16, anchor:'end'},
+  ];
+  const quadPaths = quads.map(q=>`<path d="${q.path}" fill="${q.color}" fill-opacity="${q.id===(currentArea&&currentArea.id)?0.95:0.78}" stroke="#fff" stroke-width="2" style="cursor:pointer;" onclick="openAreaDetail('${q.id}')"></path>`).join('');
+  const quadLabels = quads.map(q=>`<text x="${q.lx}" y="${q.ly}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" style="pointer-events:none;">${q.label}</text>`).join('');
+  const gateDots = gates.map(g=>`<circle cx="${g.x}" cy="${g.y}" r="2.6" fill="#1B1B1B"></circle><text x="${g.x+g.dx}" y="${g.y+g.dy}" text-anchor="${g.anchor}" font-size="9.5" fill="#5C574C">${g.label}</text>`).join('');
+  return `<svg class="doseongMapSvg" width="220" height="220" viewBox="0 0 200 200">${quadPaths}${quadLabels}${gateDots}</svg>`;
+}
+function renderDoseongSection(){
+  const body=document.getElementById('courseSubBody');
+  const ordered = DOSEONG_ORDER.map(id=>COURSES.find(c=>c.id===id)).filter(Boolean);
+  body.innerHTML = `
+    <div class="doseongIntro">
+      <p>한양도성 순성길은 창의문에서 시작해 혜화문·흥인지문·숭례문을 거쳐 다시 창의문으로 돌아오는 약 18.6km 순환 코스예요. 4개 구간을 나눠서, 또는 이어서 걸을 수 있어요.</p>
+      ${doseongMapSvg()}
+    </div>
+    <div id="doseongList"></div>
+  `;
+  const wrap=document.getElementById('doseongList');
+  ordered.forEach((c,i)=>{
+    const next = ordered[(i+1)%ordered.length];
+    const card=document.createElement('div'); card.className='card';
+    card.style.cursor='pointer';
+    card.onclick=()=>openAreaDetail(c.id);
+    card.innerHTML = `
+      <h3>${c.name}</h3>
+      <div class="meta">${c.area} · 스팟 ${c.spots.length}곳 · 코스 ${c.routes.length}개</div>
+      <div class="desc">${c.spots.map(s=>s.name).join(' → ')}</div>
+      <div class="tagrow">${c.themes.map(t=>`<span class="tag">${t}</span>`).join('')}${seasonTagHtml(c.id)}${transitHintHtml(c)}</div>
+      <div class="doseongNext">다음 구간: ${next.name} (${i===ordered.length-1?'한 바퀴 완주!':c.spots[c.spots.length-1].name+'에서 연결'})</div>
     `;
     wrap.appendChild(card);
   });
@@ -2052,7 +2125,7 @@ function renderMapMarkers(){
 ===================================================================== */
 function initAppData(){
   initKakaoServices();
-  renderThemeChips(); renderCourseList();
+  renderCourseBody();
   renderFoodCatChips(); renderFoodList();
   loadBucketPlaces();
   loadFavorites();

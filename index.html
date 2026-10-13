@@ -2057,18 +2057,29 @@ function renderMapFilterChips(){
 function initKakaoServices(){
   ensureKakaoReady();
 }
+function kakaoKeywordSearch(q){
+  return new Promise((resolve)=>{
+    kakaoPlacesService.keywordSearch(q, (data,status)=>{
+      if(status===kakao.maps.services.Status.OK && data.length) resolve(data[0]);
+      else resolve(null);
+    });
+  });
+}
 async function geocodeSpot(spot, contextName){
   if(spot.lat) return spot;
   const ok = await ensureKakaoReady();
   if(!ok || !kakaoPlacesService) return null;
-  return new Promise((resolve)=>{
-    kakaoPlacesService.keywordSearch(`${contextName||''} ${spot.name}`.trim(), (data,status)=>{
-      if(status===kakao.maps.services.Status.OK && data.length){
-        spot.lat=parseFloat(data[0].y); spot.lng=parseFloat(data[0].x);
-        resolve(spot);
-      } else resolve(null);
-    });
-  });
+  // "도성 · 백악구간"처럼 실제 지명이 아닌 코스명을 그대로 붙이면 검색이 안 될 수 있어서,
+  // 좁은 질의(코스명+스팟명)부터 넓은 질의(스팟명만)까지 순서대로 재시도함.
+  const queries = [];
+  if(contextName) queries.push(`${contextName} ${spot.name}`.trim());
+  queries.push(`서울 ${spot.name}`);
+  queries.push(spot.name);
+  for(const q of queries){
+    const found = await kakaoKeywordSearch(q);
+    if(found){ spot.lat=parseFloat(found.y); spot.lng=parseFloat(found.x); return spot; }
+  }
+  return null;
 }
 let mapMarkers=[];
 let activeCourseInfoWindow=null;

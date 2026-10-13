@@ -1563,8 +1563,10 @@ function renderSteps(title, spots, isRandom){
 async function spotRouteClick(i){
   const s=__stepsSpots[i]; if(!s) return;
   if(!s.lat){
+    const ready = await ensureKakaoReady();
+    if(!ready){ alert('지도 서비스를 불러오지 못했어요. 인터넷 연결을 확인하고 잠시 후 다시 시도해주세요.'); return; }
     const found = await geocodeSpot(s, currentArea ? currentArea.name : '서울');
-    if(!found){ alert('위치를 찾지 못했어요. 지도 탭을 한번 연 뒤 다시 시도해주세요.'); return; }
+    if(!found){ alert(`"${s.name}" 위치를 찾지 못했어요. 장소명이 정확한지 확인해주세요.`); return; }
   }
   openRouteSheetTo(s.lat, s.lng, s.name);
 }
@@ -1824,13 +1826,28 @@ let kakaoReadyPromise=null;
 function ensureKakaoReady(){
   if(kakaoReadyPromise) return kakaoReadyPromise;
   kakaoReadyPromise = new Promise((resolve)=>{
-    if(!window.kakao || !window.kakao.maps){ resolve(false); return; }
+    if(!window.kakao || !window.kakao.maps){
+      console.error('[카카오맵] SDK 스크립트 자체가 로드되지 않음 (window.kakao 없음) — 앱키 도메인 등록 또는 네트워크 문제일 수 있음');
+      resolve(false); return;
+    }
+    // SDK 로딩이 비정상적으로 멈추는 경우(예: 앱키 도메인 미등록으로 콜백이 안 옴) 대비, 6초 타임아웃
+    let settled=false;
+    const timer=setTimeout(()=>{
+      if(settled) return; settled=true;
+      console.error('[카카오맵] kakao.maps.load 콜백이 6초 내 응답 없음 — Kakao Developers 콘솔의 Web 플랫폼 도메인 등록을 확인해보세요');
+      resolve(false);
+    },6000);
     try{
       kakao.maps.load(()=>{
+        if(settled) return; settled=true; clearTimeout(timer);
         if(!kakaoPlacesService) kakaoPlacesService = new kakao.maps.services.Places();
         resolve(true);
       });
-    }catch(e){ resolve(false); }
+    }catch(e){
+      if(settled) return; settled=true; clearTimeout(timer);
+      console.error('[카카오맵] kakao.maps.load 호출 중 예외:', e);
+      resolve(false);
+    }
   });
   return kakaoReadyPromise;
 }

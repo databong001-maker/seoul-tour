@@ -2086,12 +2086,15 @@ async function geocodeSpot(spot, contextName){
   if(spot.lat) return spot;
   const ok = await ensureKakaoReady();
   if(!ok || !kakaoPlacesService) return null;
-  // "도성 · 백악구간"처럼 실제 지명이 아닌 코스명을 그대로 붙이면 검색이 안 될 수 있어서,
-  // 좁은 질의(코스명+스팟명)부터 넓은 질의(스팟명만)까지 순서대로 재시도함.
+  // "도성 · 백악구간"처럼 실제 지명이 아닌 코스명을 그대로 붙이면 검색이 안 될 수 있고,
+  // "아프릴(April)"처럼 괄호 부연설명이 붙은 이름도 그대로 검색하면 안 걸릴 수 있어서,
+  // 이름 변형(원래 이름/괄호 제거한 이름) × 질의 범위(코스명+이름/서울+이름/이름만)를 순서대로 재시도함.
+  const cleanName = spot.name.replace(/\s*[\(（][^)）]*[\)）]/g,'').trim();
+  const nameVariants = cleanName && cleanName!==spot.name ? [spot.name, cleanName] : [spot.name];
   const queries = [];
-  if(contextName) queries.push(`${contextName} ${spot.name}`.trim());
-  queries.push(`서울 ${spot.name}`);
-  queries.push(spot.name);
+  nameVariants.forEach(n=>{ if(contextName) queries.push(`${contextName} ${n}`.trim()); });
+  nameVariants.forEach(n=> queries.push(`서울 ${n}`));
+  nameVariants.forEach(n=> queries.push(n));
   for(const q of queries){
     const found = await kakaoKeywordSearch(q);
     if(found){ spot.lat=parseFloat(found.y); spot.lng=parseFloat(found.x); return spot; }

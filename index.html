@@ -1246,7 +1246,8 @@ function finishFlowToArea(regionId, themeLabel){
     </div>
   `;
   setTimeout(()=>{
-    switchTab('course');
+    // 홈 룰렛에서 열었을 땐 탭을 동네투어로 바꾸지 않고 홈 화면 위에 코스 상세만 띄움.
+    // (전에는 switchTab('course')로 바꿔서, 뒤로가기 시 홈이 아니라 동네투어 탭 목록이 보이는 문제가 있었음)
     openAreaDetail(regionId);
   }, 900);
 }

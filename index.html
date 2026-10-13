@@ -1818,6 +1818,22 @@ async function toggleVisited(idx){
 
 /* ---- 버킷리스트 추가: 카카오 검색 ---- */
 let kakaoPlacesService=null;
+let kakaoReadyPromise=null;
+// 카카오맵 SDK(autoload=false)의 services 라이브러리 로딩을 기다렸다가 kakaoPlacesService를 준비함.
+// 지도 탭을 열지 않아도(앱 시작 시 initKakaoServices가 먼저 불러두고, 각 검색/길찾기 함수가 이 promise를 기다려서) 동작하도록 함.
+function ensureKakaoReady(){
+  if(kakaoReadyPromise) return kakaoReadyPromise;
+  kakaoReadyPromise = new Promise((resolve)=>{
+    if(!window.kakao || !window.kakao.maps){ resolve(false); return; }
+    try{
+      kakao.maps.load(()=>{
+        if(!kakaoPlacesService) kakaoPlacesService = new kakao.maps.services.Places();
+        resolve(true);
+      });
+    }catch(e){ resolve(false); }
+  });
+  return kakaoReadyPromise;
+}
 let pendingPlace=null;
 function openAddPlaceSheet(){
   document.getElementById('placeSearchInput').value='';
@@ -1825,11 +1841,13 @@ function openAddPlaceSheet(){
   document.getElementById('addPlaceOverlay').classList.add('show');
 }
 function closeSheet(id){ document.getElementById(id).classList.remove('show'); }
-function searchPlaceForAdd(){
+async function searchPlaceForAdd(){
   const q=document.getElementById('placeSearchInput').value.trim();
   const wrap=document.getElementById('placeSearchResults');
-  if(!q || !kakaoPlacesService){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색어를 입력해주세요.</p>'; return; }
+  if(!q){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색어를 입력해주세요.</p>'; return; }
   wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색 중…</p>';
+  await ensureKakaoReady();
+  if(!kakaoPlacesService){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">지도를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>'; return; }
   kakaoPlacesService.keywordSearch(q, (data, status)=>{
     if(status!==kakao.maps.services.Status.OK || !data.length){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색 결과가 없어요.</p>'; return; }
     wrap.innerHTML='';
@@ -1909,11 +1927,13 @@ function openAddFavSheet(){
   document.getElementById('favSearchResults').innerHTML='';
   document.getElementById('addFavOverlay').classList.add('show');
 }
-function searchFavForAdd(){
+async function searchFavForAdd(){
   const q=document.getElementById('favSearchInput').value.trim();
   const wrap=document.getElementById('favSearchResults');
-  if(!q || !kakaoPlacesService){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색어를 입력해주세요.</p>'; return; }
+  if(!q){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색어를 입력해주세요.</p>'; return; }
   wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색 중…</p>';
+  await ensureKakaoReady();
+  if(!kakaoPlacesService){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">지도를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>'; return; }
   kakaoPlacesService.keywordSearch(q, (data, status)=>{
     if(status!==kakao.maps.services.Status.OK || !data.length){ wrap.innerHTML='<p style="font-size:12.5px;color:var(--muted)">검색 결과가 없어요.</p>'; return; }
     wrap.innerHTML='';
@@ -2035,15 +2055,13 @@ function renderMapFilterChips(){
   });
 }
 function initKakaoServices(){
-  if(!window.kakao || !window.kakao.maps) return;
-  kakao.maps.load(()=>{
-    if(!kakaoPlacesService) kakaoPlacesService = new kakao.maps.services.Places();
-  });
+  ensureKakaoReady();
 }
-function geocodeSpot(spot, contextName){
+async function geocodeSpot(spot, contextName){
+  if(spot.lat) return spot;
+  const ok = await ensureKakaoReady();
+  if(!ok || !kakaoPlacesService) return null;
   return new Promise((resolve)=>{
-    if(spot.lat){ resolve(spot); return; }
-    if(!kakaoPlacesService){ resolve(null); return; }
     kakaoPlacesService.keywordSearch(`${contextName||''} ${spot.name}`.trim(), (data,status)=>{
       if(status===kakao.maps.services.Status.OK && data.length){
         spot.lat=parseFloat(data[0].y); spot.lng=parseFloat(data[0].x);
@@ -2055,9 +2073,8 @@ function geocodeSpot(spot, contextName){
 let mapMarkers=[];
 let activeCourseInfoWindow=null;
 function ensureKakaoMap(){
-  if(!window.kakao || !window.kakao.maps) return;
-  kakao.maps.load(()=>{
-    if(!kakaoPlacesService) kakaoPlacesService = new kakao.maps.services.Places();
+  ensureKakaoReady().then((ok)=>{
+    if(!ok) return;
     if(!kakaoMap){
       const container = document.getElementById('kakaoMap');
       kakaoMap = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(37.5665,126.9780), level:8 });

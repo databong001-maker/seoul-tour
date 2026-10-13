@@ -1242,7 +1242,8 @@ function finishFlowToArea(regionId, themeLabel){
   document.getElementById('homeRouletteBody').innerHTML = `
     <div style="text-align:center;padding:44px 10px;">
       <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">${themeLabel?'오늘의 테마':'당첨!'}</p>
-      <h2 class="serif" style="font-size:23px;">${themeLabel||(COURSES.find(c=>c.id===regionId)||{}).name||''}</h2>
+      <h2 class="serif" style="font-size:23px;margin-bottom:18px;">${themeLabel||(COURSES.find(c=>c.id===regionId)||{}).name||''}</h2>
+      <button class="btn spinBtn" style="background:var(--gold);max-width:220px;margin:0 auto;" onclick="dispatchHomeMode()">🎯 다시 룰렛 돌리기</button>
     </div>
   `;
   setTimeout(()=>{

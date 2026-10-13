@@ -1566,7 +1566,11 @@ async function spotRouteClick(i){
     const ready = await ensureKakaoReady();
     if(!ready){ alert('지도 서비스를 불러오지 못했어요. 인터넷 연결을 확인하고 잠시 후 다시 시도해주세요.'); return; }
     const found = await geocodeSpot(s, currentArea ? currentArea.name : '서울');
-    if(!found){ alert(`"${s.name}" 위치를 찾지 못했어요. 장소명이 정확한지 확인해주세요.`); return; }
+    if(!found){
+      // 좌표를 정확히 못 찾아도 길찾기 자체가 막히지 않도록, 카카오맵에서 이름으로 바로 검색해 직접 고르게 넘겨줌
+      location.href = `https://map.kakao.com/link/search/${encodeURIComponent(s.name)}`;
+      return;
+    }
   }
   openRouteSheetTo(s.lat, s.lng, s.name);
 }
@@ -2090,7 +2094,14 @@ async function geocodeSpot(spot, contextName){
   // "아프릴(April)"처럼 괄호 부연설명이 붙은 이름도 그대로 검색하면 안 걸릴 수 있어서,
   // 이름 변형(원래 이름/괄호 제거한 이름) × 질의 범위(코스명+이름/서울+이름/이름만)를 순서대로 재시도함.
   const cleanName = spot.name.replace(/\s*[\(（][^)）]*[\)）]/g,'').trim();
-  const nameVariants = cleanName && cleanName!==spot.name ? [spot.name, cleanName] : [spot.name];
+  const nameVariants = new Set([spot.name]);
+  if(cleanName && cleanName!==spot.name) nameVariants.add(cleanName);
+  // "상수 노어 와인바"처럼 앞에 동네 이름이 붙은 경우, 실제 카카오 등록명은 동네 없이
+  // "노어 와인바"일 수도 있어서 맨 앞 단어를 뗀 버전도 후보에 추가함.
+  [spot.name, cleanName].forEach(n=>{
+    const words = n.split(/\s+/);
+    if(words.length>2) nameVariants.add(words.slice(1).join(' '));
+  });
   const queries = [];
   nameVariants.forEach(n=>{ if(contextName) queries.push(`${contextName} ${n}`.trim()); });
   nameVariants.forEach(n=> queries.push(`서울 ${n}`));

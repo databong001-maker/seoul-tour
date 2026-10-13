@@ -2004,7 +2004,7 @@ async function quickRouteToFav(lat, lng){
   const from = await resolveRoutePoint('gps');
   if(!from){ alert('현재 위치를 확인하지 못했어요. 위치 권한을 확인해주세요.'); return; }
   const url = `https://m.map.kakao.com/scheme/route?sp=${from.lat},${from.lng}&ep=${lat},${lng}&by=publictransit`;
-  window.open(url, '_blank');
+  location.href = url;
 }
 async function launchRoute(){
   const fromVal=document.getElementById('routeFrom').value;
@@ -2014,7 +2014,7 @@ async function launchRoute(){
   const to = await resolveRoutePoint(toVal);
   if(!from || !to){ alert('출발지/도착지 좌표를 확인하지 못했어요. 위치 권한을 확인해주세요.'); return; }
   const url = `https://m.map.kakao.com/scheme/route?sp=${from.lat},${from.lng}&ep=${to.lat},${to.lng}&by=${mode}`;
-  window.open(url, '_blank');
+  location.href = url;
 }
 
 /* =====================================================================
